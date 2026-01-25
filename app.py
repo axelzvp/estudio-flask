@@ -15,6 +15,7 @@ MONGO_URI = os.environ.get("MONGO_URI")
 # ========== CONFIGURACIÓN DE LA APLICACIÓN ==========
 app = Flask(__name__)
 CORS(app)
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 
 # ========== CONEXIÓN A MONGODB ==========
 client = MongoClient(MONGO_URI)
