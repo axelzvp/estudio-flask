@@ -1,0 +1,2233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiStudy - Panel de Maestro</title>
+    
+    <!-- MathJax -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\$$', '\$$']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS Propio -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        /* Estilos adicionales específicos para el panel de maestro */
+        .floating-new-question {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-glow);
+            transition: var(--transition);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .floating-new-question:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+        
+        .question-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .question-actions .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+        
+        .questions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .question-card {
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            transition: var(--transition);
+        }
+        
+        .question-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+        
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .question-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .question-content {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            max-height: 100px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .question-content.expanded {
+            max-height: none;
+            overflow: visible;
+        }
+        
+        .question-content .read-more {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: var(--bg-card);
+            padding-left: 20px;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .question-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .question-stats span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            margin-top: 20px;
+        }
+        
+        .empty-icon {
+            font-size: 3rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+        
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-sm);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-box {
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-box .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .stat-box .label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        .page-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .page-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .page-btn:hover:not(.active) {
+            background: var(--border-color);
+        }
+        
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <div class="logo-text">
+                <h1>MultiStudy</h1>
+                <p id="userGreeting">Panel de Maestro</p>
+            </div>
+        </div>
+        
+        <nav class="menu">
+            <div class="menu-item active" data-page="questions">
+                <i class="fas fa-list"></i>
+                <span>Banco de Preguntas</span>
+            </div>
+            <div class="menu-item" data-page="stats">
+                <i class="fas fa-chart-bar"></i>
+                <span>Estadísticas</span>
+            </div>
+            <div class="menu-item" data-page="study">
+                <i class="fas fa-book-open"></i>
+                <span>Modo Estudio</span>
+            </div>
+            <div class="menu-item" id="openModalBtn">
+                <i class="fas fa-plus-circle"></i>
+                <span>Nueva Pregunta</span>
+            </div>
+        </nav>
+        
+        <div class="stats-sidebar">
+            <div class="stats-header">
+                <i class="fas fa-chart-pie"></i>
+                <span>Resumen</span>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-icon"><i class="fas fa-question-circle"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="sidebarTotal">0</span>
+                    <span class="stat-label">Preguntas</span>
+                </div>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-icon"><i class="fas fa-book"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="sidebarSubjects">0</span>
+                    <span class="stat-label">Materias</span>
+                </div>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-icon"><i class="fas fa-eye"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="sidebarShown">0</span>
+                    <span class="stat-label">Estudiadas</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="user-profile">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name" id="userName"></span>
+                    <span class="user-role" id="userRole">👨‍🏫 Maestro</span>
+                </div>
+                <button class="btn-logout" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Página: Banco de Preguntas -->
+        <div class="page active" id="questionsPage">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h2 class="page-title">
+                        <i class="fas fa-list"></i> 
+                        Banco de Preguntas
+                    </h2>
+                    <p class="page-subtitle">Administra todas las preguntas del sistema</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-ghost" id="showHelpBtn">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                    <button class="btn btn-primary" id="openModalFromListBtn">
+                        <i class="fas fa-plus"></i>
+                        Nueva Pregunta
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Resumen estadístico -->
+            <div class="stats-summary">
+                <div class="stat-box">
+                    <div class="number" id="totalQuestionsStat">0</div>
+                    <div class="label">Total de Preguntas</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number" id="totalSubjectsStat">0</div>
+                    <div class="label">Materias Diferentes</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number" id="totalShownStat">0</div>
+                    <div class="label">Veces Estudiadas</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number" id="totalCorrectStat">0</div>
+                    <div class="label">Respuestas Correctas</div>
+                </div>
+            </div>
+            
+            <!-- Filtros y búsqueda -->
+            <div class="filter-container">
+                <select class="filter-select" id="subjectFilter">
+                    <option value="todos">Todas las materias</option>
+                </select>
+                
+                <select class="filter-select" id="topicFilter">
+                    <option value="todos">Todos los temas</option>
+                </select>
+                
+                <select class="filter-select" id="universityFilter">
+                    <option value="todos">Todas las universidades</option>
+                    <option value="UNAM">UNAM</option>
+                    <option value="IPN">IPN</option>
+                    <option value="UAM">UAM</option>
+                    <option value="TEC">TEC</option>
+                    <option value="EXANI">EXANI</option>
+                </select>
+                
+                <select class="filter-select" id="typeFilter">
+                    <option value="todos">Todos los tipos</option>
+                    <option value="opciones">Opciones múltiples</option>
+                    <option value="abierta">Respuesta abierta</option>
+                </select>
+                
+                <button class="btn btn-outline btn-sm" id="clearFiltersBtn">
+                    <i class="fas fa-times"></i> Limpiar
+                </button>
+            </div>
+            
+            <div class="search-container">
+                <input type="text" class="search-input" id="searchInput" 
+                       placeholder="Buscar en preguntas y respuestas...">
+                <button class="btn btn-primary" id="searchBtn">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </div>
+            
+            <!-- Lista de preguntas -->
+            <div class="questions-grid" id="questionsList">
+                <!-- Las preguntas se cargan dinámicamente -->
+            </div>
+            
+            <!-- Estado vacío -->
+            <div id="noQuestionsMessage" class="empty-state" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <h3>No hay preguntas todavía</h3>
+                <p>Comienza agregando tu primera pregunta</p>
+                <button class="btn btn-primary" id="addFirstQuestionBtn">
+                    <i class="fas fa-plus"></i>
+                    Agregar Primera Pregunta
+                </button>
+            </div>
+            
+            <!-- Sin resultados de búsqueda -->
+            <div id="noSearchResults" class="empty-state" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3>Sin resultados</h3>
+                <p>No hay preguntas que coincidan con tu búsqueda</p>
+                <button class="btn btn-outline" id="clearSearchBtn">
+                    <i class="fas fa-times"></i> Limpiar Búsqueda
+                </button>
+            </div>
+            
+            <!-- Paginación -->
+            <div class="pagination" id="pagination" style="display: none;">
+                <button class="page-btn" id="prevPageBtn" disabled>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span id="pageInfo" style="color: var(--text-muted); font-size: 0.9rem;">
+                    Página 1 de 1
+                </span>
+                <button class="page-btn" id="nextPageBtn" disabled>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Página: Estadísticas -->
+        <div class="page" id="statsPage">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h2 class="page-title">
+                        <i class="fas fa-chart-bar"></i> 
+                        Estadísticas Detalladas
+                    </h2>
+                    <p class="page-subtitle">Análisis completo del sistema</p>
+                </div>
+            </div>
+            
+            <!-- Gráficos principales -->
+            <div class="stats-grid">
+                <div class="stats-card">
+                    <div class="stats-card-header">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Distribución por Materias</span>
+                    </div>
+                    <div class="stats-card-body">
+                        <div id="subjectsChart"></div>
+                    </div>
+                </div>
+                
+                <div class="stats-card">
+                    <div class="stats-card-header">
+                        <i class="fas fa-university"></i>
+                        <span>Distribución por Universidad</span>
+                    </div>
+                    <div class="stats-card-body">
+                        <div id="universitiesChart"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estadísticas detalladas -->
+            <div class="stats-grid" style="margin-top: 20px;">
+                <div class="stats-card">
+                    <div class="stats-card-header">
+                        <i class="fas fa-star"></i>
+                        <span>Temas más Populares</span>
+                    </div>
+                    <div class="stats-card-body">
+                        <div id="topTopicsList"></div>
+                    </div>
+                </div>
+                
+                <div class="stats-card">
+                    <div class="stats-card-header">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Rendimiento</span>
+                    </div>
+                    <div class="stats-card-body">
+                        <div id="performanceStats"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabla de preguntas más vistas -->
+            <div class="stats-card" style="margin-top: 20px;">
+                <div class="stats-card-header">
+                    <i class="fas fa-eye"></i>
+                    <span>Preguntas Más Visitadas</span>
+                </div>
+                <div class="stats-card-body">
+                    <div id="mostViewedQuestions">
+                        <!-- Se carga dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Página: Modo Estudio (para que el maestro también pueda estudiar) -->
+        <div class="page" id="studyPage">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h2 class="page-title">
+                        <i class="fas fa-book-open"></i> 
+                        Modo Estudio
+                    </h2>
+                    <p class="page-subtitle">Prueba las preguntas como lo haría un alumno</p>
+                </div>
+            </div>
+            
+            <!-- Selector de materias -->
+            <div class="study-selector" id="subjectSelectorContainer">
+                <div class="study-selector-header">
+                    <div class="section-title">
+                        <i class="fas fa-th-large"></i>
+                        <span>Selecciona una materia</span>
+                    </div>
+                </div>
+                
+                <div class="study-selector-body">
+                    <div class="subjects-grid" id="subjectButtons">
+                        <!-- Las materias se cargan dinamicamente -->
+                    </div>
+                    
+                    <!-- Temas -->
+                    <div id="topicSelectorContainer" class="topics-section" style="display: none;">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <i class="fas fa-folder-open"></i>
+                                <span>Temas de <strong id="currentSubjectName"></strong></span>
+                            </div>
+                        </div>
+                        <div class="topics-chips" id="studyTopicButtons">
+                            <!-- Los temas se cargan aqui -->
+                        </div>
+                    </div>
+                    
+                    <!-- Boton para comenzar -->
+                    <div class="study-action">
+                        <button class="btn btn-primary btn-lg" id="getQuestionBtn">
+                            <i class="fas fa-dice"></i>
+                            <span>Obtener Pregunta</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botón flotante para nueva pregunta -->
+    <button class="floating-new-question" id="floatingNewQuestionBtn" title="Nueva Pregunta">
+        <i class="fas fa-plus"></i>
+    </button>
+    
+    <!-- MODAL DE PREGUNTA (Modo Estudio) -->
+    <div class="modal-overlay" id="studyQuestionModal" style="display:none;">
+      <div class="modal study-modal">
+        <div class="modal-header">
+          <div class="question-badges">
+            <span class="badge badge-subject" id="modalQuestionSubject"></span>
+            <span class="badge badge-topic" id="modalQuestionTopic"></span>
+            <span class="badge badge-university" id="modalQuestionUniversity"></span>
+          </div>
+          <button class="modal-close" onclick="closeStudyModal()">&times;</button>
+        </div>
+    
+        <div class="modal-body">
+          <div class="question-content" id="modalQuestionText"></div>
+    
+          <!-- Opciones -->
+          <div id="modalOptionsContainer"></div>
+    
+          <!-- Respuesta -->
+          <div class="answer-section" id="modalAnswerSection" style="display:none;">
+            <div id="modalAnswerText"></div>
+            <div id="modalSolutionText" style="margin-top:10px;"></div>
+          </div>
+        </div>
+    
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="showModalAnswer()">
+            <i class="fas fa-eye"></i> Ver respuesta
+          </button>
+          <button class="btn btn-primary" onclick="getRandomQuestion()">
+            <i class="fas fa-dice"></i> Nueva pregunta
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Modal para agregar/editar preguntas (MODAL MEJORADO) -->
+    <div class="modal-overlay" id="questionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus-circle"></i> Nueva Pregunta
+                </h3>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group modal-subject-group">
+                    <label><i class="fas fa-book"></i> Materia</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select class="form-control" id="modalSubject" style="flex: 1;">
+                            <option value="Matemáticas">Matemáticas</option>
+                            <option value="Física">Física</option>
+                            <option value="Química">Química</option>
+                            <option value="Biología">Biología</option>
+                            <option value="Historia">Historia</option>
+                            <option value="Geografía">Geografía</option>
+                        </select>
+                        <input type="text" class="form-control" id="modalNewSubject" 
+                               placeholder="Otra materia" style="flex: 1; display: none;">
+                    </div>
+                    <div class="form-hint">
+                        <i class="fas fa-info-circle"></i> Selecciona una materia existente o escribe una nueva
+                    </div>
+                </div>
+                                
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Tema</label>
+                    <input type="text" class="form-control" id="modalTopic" 
+                           placeholder="Ej: Álgebra, Cálculo, Geometría">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-question-circle"></i> Pregunta</label>
+                    
+                    <!-- TECLADO MATEMÁTICO COMPLETO PARA PREGUNTA -->
+                    <div class="math-toolbar" id="questionMathToolbar">
+                        <div class="toolbar-section">
+                            <span class="section-label">Operaciones:</span>
+                            <button type="button" class="math-btn" data-symbol="\frac{ }{ }" title="Fracción" data-target="modalQuestion">
+                                <i class="fas fa-divide"></i> Fracción
+                            </button>
+                            <button type="button" class="math-btn" data-symbol="\sqrt{ }" title="Raíz cuadrada" data-target="modalQuestion">√</button>
+                            <button type="button" class="math-btn" data-symbol="\sqrt[n]{ }" title="Raíz n-ésima" data-target="modalQuestion">ⁿ√</button>
+                            <button type="button" class="math-btn" data-symbol="^{ }" title="Exponente" data-target="modalQuestion">x²</button>
+                               <button type="button" class="math-btn" data-symbol="_{ }" title="Subíndice" data-target="modalQuestion"> x₂ </button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Trig:</span>
+                            <button type="button" class="math-btn" data-symbol="\sin(" title="Seno" data-target="modalQuestion">sin</button>
+                            <button type="button" class="math-btn" data-symbol="\cos(" title="Coseno" data-target="modalQuestion">cos</button>
+                            <button type="button" class="math-btn" data-symbol="\tan(" title="Tangente" data-target="modalQuestion">tan</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Cálculo:</span>
+                            <button type="button" class="math-btn" data-symbol="\lim_{ \to }" title="Límite" data-target="modalQuestion">lim</button>
+                            <button type="button" class="math-btn" data-symbol="\int_{ }^{ }" title="Integral" data-target="modalQuestion">∫</button>
+                            <button type="button" class="math-btn" data-symbol="\sum_{ }^{ }" title="Sumatoria" data-target="modalQuestion">∑</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Símbolos:</span>
+                            <button type="button" class="math-btn" data-symbol="\infty" title="Infinito" data-target="modalQuestion">∞</button>
+                            <button type="button" class="math-btn" data-symbol="\pi" title="Pi" data-target="modalQuestion">π</button>
+                            <button type="button" class="math-btn" data-symbol="\theta" title="Theta" data-target="modalQuestion">θ</button>
+                            <button type="button" class="math-btn" data-symbol="\alpha" title="Alpha" data-target="modalQuestion">α</button>
+                            <button type="button" class="math-btn" data-symbol="\beta" title="Beta" data-target="modalQuestion">β</button>
+                            <button type="button" class="math-btn" data-symbol="\pm" title="Más menos" data-target="modalQuestion">±</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Estructuras:</span>
+                            <button type="button" class="math-btn" data-symbol="( )" title="Paréntesis" data-target="modalQuestion">( )</button>
+                            <button type="button" class="math-btn" data-symbol="[ ]" title="Corchetes" data-target="modalQuestion">[ ]</button>
+                            <button type="button" class="math-btn" data-symbol="\{ \}" title="Llaves" data-target="modalQuestion">{ }</button>
+                        </div>
+                    </div>
+                    
+                    <textarea class="form-control" id="modalQuestion" 
+                              placeholder="Escribe tu pregunta... (usa los botones arriba para símbolos)" 
+                              rows="4"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-check-circle"></i> Respuesta</label>
+                    
+                    <!-- TECLADO MATEMÁTICO COMPLETO PARA RESPUESTA -->
+                    <div class="math-toolbar" id="answerMathToolbar">
+                        <div class="toolbar-section">
+                            <span class="section-label">Operaciones:</span>
+                            <button type="button" class="math-btn" data-symbol="\frac{ }{ }" title="Fracción" data-target="modalAnswer">
+                                <i class="fas fa-divide"></i> Fracción
+                            </button>
+                            <button type="button" class="math-btn" data-symbol="\sqrt{ }" title="Raíz cuadrada" data-target="modalAnswer">√</button>
+                            <button type="button" class="math-btn" data-symbol="\sqrt[n]{ }" title="Raíz n-ésima" data-target="modalAnswer">ⁿ√</button>
+                            <button type="button" class="math-btn" data-symbol="^{ }" title="Exponente" data-target="modalAnswer">x²</button>
+                            <button type="button" class="math-btn" data-symbol="=" title="Igual" data-target="modalAnswer">=</button>
+                            <button type="button" class="math-btn" data-symbol="_{ }" title="Subíndice" data-target="modalQuestion"> x₂ </button>
+
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Símbolos:</span>
+                            <button type="button" class="math-btn" data-symbol="\pi" title="Pi" data-target="modalAnswer">π</button>
+                            <button type="button" class="math-btn" data-symbol="\infty" title="Infinito" data-target="modalAnswer">∞</button>
+                            <button type="button" class="math-btn" data-symbol="\pm" title="Más menos" data-target="modalAnswer">±</button>
+                            <button type="button" class="math-btn" data-symbol="\neq" title="Diferente" data-target="modalAnswer">≠</button>
+                            <button type="button" class="math-btn" data-symbol="\leq" title="Menor o igual" data-target="modalAnswer">≤</button>
+                            <button type="button" class="math-btn" data-symbol="\geq" title="Mayor o igual" data-target="modalAnswer">≥</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Estructuras:</span>
+                            <button type="button" class="math-btn" data-symbol="( )" title="Paréntesis" data-target="modalAnswer">( )</button>
+                            <button type="button" class="math-btn" data-symbol="[ ]" title="Corchetes" data-target="modalAnswer">[ ]</button>
+                            <button type="button" class="math-btn" data-symbol="\{ \}" title="Llaves" data-target="modalAnswer">{ }</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Checkbox para opciones múltiples -->
+                    <div style="margin: 12px 0 8px 0;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem;">
+                            <input type="checkbox" id="hasOptionsCheckbox" onchange="toggleOptions()">
+                            <span><i class="fas fa-list-ol"></i> Es una pregunta de opción múltiple (4 opciones)</span>
+                        </label>
+                    </div>
+                    
+                    <!-- RESPUESTA ABIERTA (por defecto) -->
+                    <div id="openAnswerSection">
+                        <textarea class="form-control" id="modalAnswer" 
+                                  placeholder="Escribe la respuesta... (usa los botones arriba para símbolos)" 
+                                  rows="3"></textarea>
+                    </div>
+                    
+                    <!-- SECCIÓN DE OPCIONES (oculta por defecto) -->
+                    <div id="optionsSection" style="display: none;">
+                        <h4><i class="fas fa-check-circle"></i> Opciones de Respuesta (selecciona la correcta)</h4>
+                        
+                        <div class="options-grid">
+                            <!-- Opción A -->
+                            <div class="option-group">
+                                <label style="color: #ef4444;"><i class="fas fa-circle"></i> Opción A</label>
+                                <textarea class="form-control option-input" id="optionA" 
+                                          placeholder="Texto de la opción A" rows="2"
+                                          onfocus="handleOptionFocus(event)"></textarea>
+                                <div style="margin-top: 6px;">
+                                    <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.8rem;">
+                                        <input type="radio" name="correctOption" value="0" id="correctOptionA">
+                                        <span>Es la correcta</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Opción B -->
+                            <div class="option-group">
+                                <label style="color: #3b82f6;"><i class="fas fa-circle"></i> Opción B</label>
+                                <textarea class="form-control option-input" id="optionB" 
+                                            placeholder="Texto de la opción B" rows="2"
+                                            onfocus="handleOptionFocus(event)"></textarea>
+                                <div style="margin-top: 6px;">
+                                    <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.8rem;">
+                                        <input type="radio" name="correctOption" value="1" id="correctOptionB">
+                                        <span>Es la correcta</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Opción C -->
+                            <div class="option-group">
+                                <label style="color: #22c55e;"><i class="fas fa-circle"></i> Opción C</label>
+                                <textarea class="form-control option-input" id="optionC" 
+                                          placeholder="Texto de la opción C" rows="2"
+                                           onfocus="handleOptionFocus(event)"></textarea>
+                                <div style="margin-top: 6px;">
+                                    <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.8rem;">
+                                        <input type="radio" name="correctOption" value="2" id="correctOptionC">
+                                        <span>Es la correcta</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Opción D -->
+                            <div class="option-group">
+                                <label style="color: #f59e0b;"><i class="fas fa-circle"></i> Opción D</label>
+                                <textarea class="form-control option-input" id="optionD" 
+                                          placeholder="Texto de la opción D" rows="2"
+                                           onfocus="handleOptionFocus(event)"></textarea>
+                                <div style="margin-top: 6px;">
+                                    <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.8rem;">
+                                        <input type="radio" name="correctOption" value="3" id="correctOptionD">
+                                        <span>Es la correcta</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-hint" style="margin-top: 12px;">
+                            <i class="fas fa-info-circle"></i> Marca con el botón de radio cuál es la opción correcta
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-list-ol"></i> Solución Detallada (Opcional)</label>
+                    
+                    <!-- TECLADO MATEMÁTICO COMPLETO PARA SOLUCIÓN -->
+                    <div class="math-toolbar" id="solutionMathToolbar">
+                        <div class="toolbar-section">
+                            <span class="section-label">Operaciones:</span>
+                            <button type="button" class="math-btn" data-symbol="\frac{ }{ }" title="Fracción" data-target="modalSolution">
+                                <i class="fas fa-divide"></i> Fracción
+                            </button>
+                            <button type="button" class="math-btn" data-symbol="\sqrt{ }" title="Raíz cuadrada" data-target="modalSolution">√</button>
+                            <button type="button" class="math-btn" data-symbol="\sqrt[n]{ }" title="Raíz n-ésima" data-target="modalSolution">ⁿ√</button>
+                            <button type="button" class="math-btn" data-symbol="^{ }" title="Exponente" data-target="modalSolution">x²</button>
+                            <button type="button" class="math-btn" data-symbol="=" title="Igual" data-target="modalSolution">=</button>
+                            <button type="button" class="math-btn" data-symbol="\Rightarrow" title="Implica" data-target="modalSolution">⇒</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Cálculo:</span>
+                            <button type="button" class="math-btn" data-symbol="\int_{ }^{ }" title="Integral" data-target="modalSolution">∫</button>
+                            <button type="button" class="math-btn" data-symbol="\frac{d}{dx}" title="Derivada" data-target="modalSolution">d/dx</button>
+                            <button type="button" class="math-btn" data-symbol="\lim_{ \to }" title="Límite" data-target="modalSolution">lim</button>
+                            <button type="button" class="math-btn" data-symbol="\sum_{ }^{ }" title="Sumatoria" data-target="modalSolution">∑</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Símbolos:</span>
+                            <button type="button" class="math-btn" data-symbol="\pi" title="Pi" data-target="modalSolution">π</button>
+                            <button type="button" class="math-btn" data-symbol="\theta" title="Theta" data-target="modalSolution">θ</button>
+                            <button type="button" class="math-btn" data-symbol="\alpha" title="Alpha" data-target="modalSolution">α</button>
+                            <button type="button" class="math-btn" data-symbol="\beta" title="Beta" data-target="modalSolution">β</button>
+                            <button type="button" class="math-btn" data-symbol="\pm" title="Más menos" data-target="modalSolution">±</button>
+                        </div>
+                    </div>
+                    
+                    <textarea class="form-control" id="modalSolution" 
+                              placeholder="Explica los pasos para llegar a la respuesta..." 
+                              rows="4"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-university"></i> Universidad</label>
+                    <select class="form-control" id="modalUniversity">
+                        <option value="UNAM">UNAM</option>
+                        <option value="IPN">IPN</option>
+                        <option value="UAM">UAM</option>
+                        <option value="TEC">TEC</option>
+                        <option value="EXANI">EXANI</option>
+                        <option value="NAVAL">NAVAL</option>
+                        <option value="_new_">✏️ Otra universidad...</option>
+                    </select>
+                
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="modalNewUniversity"
+                        placeholder="Escribe la universidad"
+                        style="margin-top: 8px; display: none;"
+                    />
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelModalBtn">Cancelar</button>
+                <button class="btn btn-primary" id="saveQuestionBtn">
+                    <i class="fas fa-save"></i> Guardar Pregunta
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de confirmación para eliminar -->
+    <div class="modal-overlay" id="confirmModal" style="display: none;">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                </h3>
+                <button class="modal-close" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <p id="confirmMessage">¿Estás seguro de que quieres eliminar esta pregunta?</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">
+                    Esta acción no se puede deshacer.
+                </p>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancelar</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de ayuda -->
+    <div class="modal-overlay" id="helpModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-question-circle"></i> Ayuda para Maestros</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4 style="margin-bottom: 12px; color: var(--text-primary);">📚 Panel de Maestro</h4>
+                <ul style="margin: 0 0 20px 20px; line-height: 1.7; color: var(--text-secondary); font-size: 0.9rem;">
+                    <li><strong>Banco de Preguntas:</strong> Ver, editar y eliminar todas las preguntas del sistema</li>
+                    <li><strong>Estadísticas:</strong> Ver análisis detallados del uso del sistema</li>
+                    <li><strong>Modo Estudio:</strong> Probar las preguntas como lo haría un alumno</li>
+                    <li><strong>Nueva Pregunta:</strong> Agregar preguntas nuevas con fórmulas matemáticas</li>
+                </ul>
+                
+                <h4 style="margin-bottom: 12px; color: var(--text-primary);">📝 Crear Preguntas</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    Puedes crear dos tipos de preguntas:
+                </p>
+                <ul style="margin: 8px 0 20px 20px; color: var(--text-secondary); font-size: 0.9rem;">
+                    <li><strong>Respuesta abierta:</strong> El alumno debe pensar la respuesta</li>
+                    <li><strong>Opción múltiple:</strong> Con 4 opciones, solo una correcta</li>
+                </ul>
+                
+                <h4 style="margin-bottom: 12px; color: var(--text-primary);">📊 Estadísticas</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    Como maestro puedes ver:
+                </p>
+                <ul style="margin: 8px 0 0 20px; color: var(--text-secondary); font-size: 0.9rem;">
+                    <li>Distribución de preguntas por materia y universidad</li>
+                    <li>Temas más populares entre los alumnos</li>
+                    <li>Rendimiento general del sistema</li>
+                    <li>Preguntas más visitadas</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary">Entendido</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notificación -->
+    <div class="notification" id="notification"></div>
+    
+    
+    <!-- JavaScript para el panel de maestro -->
+    <script>
+        let currentUser = null;
+        let userRole = null;
+        let allQuestions = [];
+        let currentPage = 1;
+        let itemsPerPage = 12;
+        let currentSearch = '';
+        let currentFilters = {
+            subject: 'todos',
+            topic: 'todos',
+            university: 'todos',
+            type: 'todos'
+        };
+        let questionToDelete = null;
+        let isEditMode = false;
+        let currentEditQuestionId = null;
+        let studySelectedSubject = 'todos';
+        let studySelectedTopic = 'todos';
+        
+        // Verificar autenticación y rol
+        document.addEventListener('DOMContentLoaded', async function() {
+            await checkAuthentication();
+            
+            if (currentUser && userRole === 'maestro') {
+                setupUserInterface();
+                initMaestroApp();
+                loadAllData();
+            } else {
+                // Redirigir a login si no es maestro
+                window.location.href = '/login';
+            }
+        });
+        
+        async function checkAuthentication() {
+            try {
+                const response = await fetch('/api/current-user');
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    userRole = data.user.rol;
+                    return true;
+                } else {
+                    return false;
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                return false;
+            }
+        }
+        
+        function setupUserInterface() {
+            // Actualizar información del usuario
+            document.getElementById('userGreeting').textContent = `Panel de Maestro`;
+            document.getElementById('userName').textContent = `${currentUser.nombre} ${currentUser.apellido}`;
+            
+            // Configurar eventos del menú
+            document.querySelectorAll('.menu-item[data-page]').forEach(item => {
+                item.addEventListener('click', function() {
+                    if (this.id === 'openModalBtn') {
+                        openModal();
+                        return;
+                    }
+                    
+                    // Remover active de todos
+                    document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                    
+                    // Activar el seleccionado
+                    this.classList.add('active');
+                    const pageId = this.dataset.page + 'Page';
+                    document.getElementById(pageId).classList.add('active');
+                    
+                    // Cargar datos específicos de cada página
+                    if (this.dataset.page === 'questions') {
+                        loadQuestionsPage();
+                    } else if (this.dataset.page === 'stats') {
+                        loadStatsPage();
+                    } else if (this.dataset.page === 'study') {
+                        loadStudyPage();
+                    }
+                });
+            });
+            
+            // Botón de logout
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            
+            // Botones flotantes y de modal
+            // Y cámbialas para usar window.openModal (la función de app.js):
+            document.getElementById('openModalBtn').addEventListener('click', function() {
+                window.openModal();
+            });
+            document.getElementById('openModalFromListBtn').addEventListener('click', function() {
+                window.openModal();
+            });
+            document.getElementById('floatingNewQuestionBtn').addEventListener('click', function() {
+                window.openModal();
+            });
+            document.getElementById('addFirstQuestionBtn').addEventListener('click', function() {
+                window.openModal();
+            });
+            // Botón de ayuda
+            document.getElementById('showHelpBtn').addEventListener('click', function() {
+                document.getElementById('helpModal').classList.add('active');
+            });
+            
+            // Cerrar modales
+            document.querySelectorAll('#helpModal .modal-close, #helpModal .btn-primary').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.getElementById('helpModal').classList.remove('active');
+                });
+            });
+        }
+        
+        function initMaestroApp() {
+            // Modal de preguntas - Eventos de cierre
+            document.getElementById('closeModalBtn').addEventListener('click', function() {
+                window.closeModal(); // Usar la función de app.js
+            });
+            document.getElementById('cancelModalBtn').addEventListener('click', function() {
+                window.closeModal(); // Usar la función de app.js
+            });
+            document.getElementById('saveQuestionBtn').addEventListener('click', saveQuestion);
+            
+            // Teclados matemáticos - Inicializar
+            initMathToolbars();
+            
+            // Filtros
+            document.getElementById('subjectFilter').addEventListener('change', function() {
+                updateTopicFilter();
+                applyFilters();
+            });
+            document.getElementById('topicFilter').addEventListener('change', applyFilters);
+            document.getElementById('universityFilter').addEventListener('change', applyFilters);
+            document.getElementById('typeFilter').addEventListener('change', applyFilters);
+            document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
+            
+            // Búsqueda
+            document.getElementById('searchBtn').addEventListener('click', performSearch);
+            document.getElementById('searchInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') performSearch();
+            });
+            document.getElementById('clearSearchBtn').addEventListener('click', clearSearch);
+            
+            // Paginación
+            document.getElementById('prevPageBtn').addEventListener('click', prevPage);
+            document.getElementById('nextPageBtn').addEventListener('click', nextPage);
+            
+            // Modo estudio
+            document.getElementById('getQuestionBtn').addEventListener('click', getRandomQuestion);
+            
+            // Universidad personalizada en modal
+            const modalUniversitySelect = document.getElementById('modalUniversity');
+            const modalNewUniversityInput = document.getElementById('modalNewUniversity');
+            
+            modalUniversitySelect.addEventListener('change', function() {
+                if (this.value === '_new_') {
+                    modalNewUniversityInput.style.display = 'block';
+                    modalNewUniversityInput.focus();
+                } else {
+                    modalNewUniversityInput.style.display = 'none';
+                }
+            });
+            
+            // Checkbox para opciones múltiples
+            const hasOptionsCheckbox = document.getElementById('hasOptionsCheckbox');
+            if (hasOptionsCheckbox) {
+                hasOptionsCheckbox.addEventListener('change', toggleOptions);
+            }
+            
+            // Configurar botón de eliminar en modal de confirmación
+            document.getElementById('confirmDeleteBtn').addEventListener('click', deleteQuestion);
+        }
+        
+        function initMathToolbars() {
+            // Inicializar todos los teclados matemáticos
+            ['questionMathToolbar', 'answerMathToolbar', 'solutionMathToolbar'].forEach(toolbarId => {
+                const toolbar = document.getElementById(toolbarId);
+                if (toolbar) {
+                    toolbar.addEventListener('click', function(e) {
+                        if (e.target.classList.contains('math-btn')) {
+                            const symbol = e.target.dataset.symbol;
+                            const targetId = e.target.dataset.target;
+                            const textarea = document.getElementById(targetId);
+                            
+                            if (textarea) {
+                                insertSymbolAtCursor(textarea, symbol);
+                                textarea.focus();
+                            }
+                        }
+                    });
+                }
+            });
+            
+            // Para las opciones múltiples
+            document.querySelectorAll('.option-input').forEach(textarea => {
+                // Los botones matemáticos para opciones se manejan mediante el evento focus
+            });
+        }
+        
+        function insertSymbolAtCursor(textarea, symbol) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            
+            // Insertar el símbolo en la posición del cursor
+            textarea.value = text.substring(0, start) + symbol + text.substring(end);
+            
+            // Reposicionar el cursor después del símbolo insertado
+            const newPosition = start + symbol.length;
+            textarea.selectionStart = newPosition;
+            textarea.selectionEnd = newPosition;
+            
+            // Disparar evento de cambio para actualizar MathJax si es necesario
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        
+        function handleOptionFocus(event) {
+            const textarea = event.target;
+            const optionId = textarea.id;
+            
+            // Determinar qué toolbar matemático usar
+            const toolbar = document.getElementById('answerMathToolbar');
+            
+            // Actualizar todos los botones para que apunten a esta textarea
+            if (toolbar) {
+                toolbar.querySelectorAll('.math-btn').forEach(btn => {
+                    btn.dataset.target = optionId;
+                });
+            }
+        }
+        
+        function toggleOptions() {
+            const hasOptions = document.getElementById('hasOptionsCheckbox').checked;
+            const optionsSection = document.getElementById('optionsSection');
+            const openAnswerSection = document.getElementById('openAnswerSection');
+            
+            if (hasOptions) {
+                optionsSection.style.display = 'block';
+                openAnswerSection.style.display = 'none';
+            } else {
+                optionsSection.style.display = 'none';
+                openAnswerSection.style.display = 'block';
+            }
+        }
+        
+        async function loadAllData() {
+            try {
+                // Cargar preguntas
+                const response = await fetch('/api/questions');
+                const data = await response.json();
+                
+                if (data.success) {
+                    allQuestions = data.questions;
+                    updateSidebarStats();
+                    updateFilterOptions();
+                    loadQuestionsPage();
+                }
+            } catch (error) {
+                console.error('Error cargando datos:', error);
+                showNotification('Error al cargar los datos', 'error');
+            }
+        }
+        
+        function updateSidebarStats() {
+            const total = allQuestions.length;
+            const subjects = [...new Set(allQuestions.map(q => q.subject))].length;
+            const shown = allQuestions.reduce((sum, q) => sum + (q.times_shown || 0), 0);
+            const correct = allQuestions.reduce((sum, q) => sum + (q.times_correct || 0), 0);
+            
+            document.getElementById('sidebarTotal').textContent = total;
+            document.getElementById('sidebarSubjects').textContent = subjects;
+            document.getElementById('sidebarShown').textContent = shown;
+            
+            // Actualizar resumen estadístico
+            document.getElementById('totalQuestionsStat').textContent = total;
+            document.getElementById('totalSubjectsStat').textContent = subjects;
+            document.getElementById('totalShownStat').textContent = shown;
+            document.getElementById('totalCorrectStat').textContent = correct;
+        }
+        
+        function updateFilterOptions() {
+            const subjectSelect = document.getElementById('subjectFilter');
+            subjectSelect.innerHTML = '<option value="todos">Todas las materias</option>';
+            
+            const subjects = [...new Set(allQuestions.map(q => q.subject))].sort();
+            subjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject;
+                option.textContent = subject;
+                subjectSelect.appendChild(option);
+            });
+        }
+        
+        async function updateTopicFilter() {
+            const subject = document.getElementById('subjectFilter').value;
+            const topicFilter = document.getElementById('topicFilter');
+            
+            // Guardar selección actual
+            const currentTopic = topicFilter.value;
+            
+            // Limpiar opciones excepto la primera
+            topicFilter.innerHTML = '<option value="todos">Todos los temas</option>';
+            
+            if (subject !== 'todos') {
+                // Obtener temas únicos de la materia seleccionada
+                const topics = [...new Set(
+                    allQuestions
+                        .filter(q => q.subject === subject)
+                        .map(q => q.topic)
+                )].sort();
+                
+                topics.forEach(topic => {
+                    const option = document.createElement('option');
+                    option.value = topic;
+                    option.textContent = topic;
+                    topicFilter.appendChild(option);
+                });
+                
+                // Restaurar selección si aún existe
+                if (topics.includes(currentTopic)) {
+                    topicFilter.value = currentTopic;
+                }
+            }
+        }
+        
+        function applyFilters() {
+            currentFilters = {
+                subject: document.getElementById('subjectFilter').value,
+                topic: document.getElementById('topicFilter').value,
+                university: document.getElementById('universityFilter').value,
+                type: document.getElementById('typeFilter').value
+            };
+            
+            currentPage = 1;
+            displayQuestions();
+        }
+        
+        function performSearch() {
+            currentSearch = document.getElementById('searchInput').value.trim().toLowerCase();
+            currentPage = 1;
+            displayQuestions();
+        }
+        
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            currentSearch = '';
+            currentPage = 1;
+            displayQuestions();
+        }
+        
+        function clearFilters() {
+            document.getElementById('subjectFilter').value = 'todos';
+            document.getElementById('topicFilter').value = 'todos';
+            document.getElementById('universityFilter').value = 'todos';
+            document.getElementById('typeFilter').value = 'todos';
+            document.getElementById('searchInput').value = '';
+            
+            currentFilters = {
+                subject: 'todos',
+                topic: 'todos',
+                university: 'todos',
+                type: 'todos'
+            };
+            currentSearch = '';
+            currentPage = 1;
+            
+            displayQuestions();
+        }
+        
+        function displayQuestions() {
+            // Filtrar preguntas
+            let filteredQuestions = allQuestions.filter(question => {
+                // Filtrar por materia
+                if (currentFilters.subject !== 'todos' && question.subject !== currentFilters.subject) {
+                    return false;
+                }
+                
+                // Filtrar por tema
+                if (currentFilters.topic !== 'todos' && question.topic !== currentFilters.topic) {
+                    return false;
+                }
+                
+                // Filtrar por universidad
+                if (currentFilters.university !== 'todos' && question.university !== currentFilters.university) {
+                    return false;
+                }
+                
+                // Filtrar por tipo
+                if (currentFilters.type !== 'todos') {
+                    if (currentFilters.type === 'opciones' && !question.has_options) {
+                        return false;
+                    }
+                    if (currentFilters.type === 'abierta' && question.has_options) {
+                        return false;
+                    }
+                }
+                
+                // Filtrar por búsqueda
+                if (currentSearch) {
+                    const searchText = currentSearch.toLowerCase();
+                    const questionText = question.question.toLowerCase();
+                    const answerText = (question.answer || question.correct_answer || '').toLowerCase();
+                    const solutionText = (question.solution || '').toLowerCase();
+                    
+                    if (!questionText.includes(searchText) && 
+                        !answerText.includes(searchText) && 
+                        !solutionText.includes(searchText)) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+            
+            // Actualizar contadores
+            updateSidebarStats();
+            
+            // Mostrar/ocultar estados vacíos
+            const container = document.getElementById('questionsList');
+            const noQuestionsMsg = document.getElementById('noQuestionsMessage');
+            const noSearchResults = document.getElementById('noSearchResults');
+            const pagination = document.getElementById('pagination');
+            
+            if (filteredQuestions.length === 0) {
+                container.style.display = 'none';
+                pagination.style.display = 'none';
+                
+                if (currentSearch || 
+                    currentFilters.subject !== 'todos' || 
+                    currentFilters.topic !== 'todos' || 
+                    currentFilters.university !== 'todos' || 
+                    currentFilters.type !== 'todos') {
+                    noSearchResults.style.display = 'block';
+                    noQuestionsMsg.style.display = 'none';
+                } else {
+                    noQuestionsMsg.style.display = 'block';
+                    noSearchResults.style.display = 'none';
+                }
+                return;
+            }
+            
+            container.style.display = 'grid';
+            noQuestionsMsg.style.display = 'none';
+            noSearchResults.style.display = 'none';
+            
+            // Calcular paginación
+            const totalPages = Math.ceil(filteredQuestions.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageQuestions = filteredQuestions.slice(startIndex, endIndex);
+            
+            // Mostrar preguntas
+            container.innerHTML = '';
+            pageQuestions.forEach(question => {
+                const questionCard = createQuestionCard(question);
+                container.appendChild(questionCard);
+            });
+            
+            // Actualizar MathJax
+            if (window.MathJax) {
+                MathJax.typesetPromise()
+                    .catch(err => console.log('MathJax error:', err));
+            }
+            
+            // Actualizar paginación
+            if (totalPages > 1) {
+                pagination.style.display = 'flex';
+                document.getElementById('prevPageBtn').disabled = currentPage === 1;
+                document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
+                document.getElementById('pageInfo').textContent = 
+                    `Página ${currentPage} de ${totalPages} (${filteredQuestions.length} preguntas)`;
+            } else {
+                pagination.style.display = 'none';
+            }
+        }
+        
+        function createQuestionCard(question) {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            
+            // Truncar texto largo
+            const questionText = question.question.length > 200 ? 
+                question.question.substring(0, 200) + '...' : question.question;
+            
+            const isLong = question.question.length > 200;
+            
+            card.innerHTML = `
+                <div class="question-header">
+                    <div class="question-badges">
+                        <span class="badge badge-subject">${question.subject}</span>
+                        <span class="badge badge-topic">${question.topic}</span>
+                        <span class="badge badge-university">${question.university || 'N/A'}</span>
+                        ${question.has_options ? 
+                            '<span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem;">Opciones</span>' : 
+                            '<span style="background: rgba(16, 185, 129, 0.15); color: var(--primary); padding: 3px 8px; border-radius: 12px; font-size: 0.7rem;">Abierta</span>'}
+                    </div>
+                </div>
+                
+                <div class="question-content ${isLong ? '' : 'expanded'}">
+                    ${questionText}
+                    ${isLong ? '<span class="read-more" onclick="toggleQuestionText(this)">[leer más]</span>' : ''}
+                </div>
+                
+                <div class="question-actions">
+                    <button class="btn btn-warning btn-sm" onclick="editQuestion('${question._id}')">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="confirmDelete('${question._id}')">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                    <button class="btn btn-outline btn-sm" onclick="previewQuestion('${question._id}')">
+                        <i class="fas fa-eye"></i> Vista previa
+                    </button>
+                </div>
+                
+                <div class="question-stats">
+                    <span><i class="fas fa-eye"></i> ${question.times_shown || 0} vistas</span>
+                    <span><i class="fas fa-check-circle"></i> ${question.times_correct || 0} correctas</span>
+                    <span><i class="fas fa-calendar"></i> ${formatDate(question.created_at)}</span>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        function toggleQuestionText(element) {
+            const content = element.closest('.question-content');
+            const isExpanded = content.classList.contains('expanded');
+            
+            if (isExpanded) {
+                content.classList.remove('expanded');
+                element.textContent = '[leer más]';
+            } else {
+                content.classList.add('expanded');
+                element.textContent = '[leer menos]';
+            }
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+        
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayQuestions();
+            }
+        }
+        
+        function nextPage() {
+            const totalQuestions = getFilteredQuestions().length;
+            const totalPages = Math.ceil(totalQuestions / itemsPerPage);
+            
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayQuestions();
+            }
+        }
+        
+        function getFilteredQuestions() {
+            return allQuestions.filter(question => {
+                // Aplicar los mismos filtros que en displayQuestions
+                if (currentFilters.subject !== 'todos' && question.subject !== currentFilters.subject) {
+                    return false;
+                }
+                if (currentFilters.topic !== 'todos' && question.topic !== currentFilters.topic) {
+                    return false;
+                }
+                if (currentFilters.university !== 'todos' && question.university !== currentFilters.university) {
+                    return false;
+                }
+                if (currentFilters.type !== 'todos') {
+                    if (currentFilters.type === 'opciones' && !question.has_options) return false;
+                    if (currentFilters.type === 'abierta' && question.has_options) return false;
+                }
+                if (currentSearch) {
+                    const searchText = currentSearch.toLowerCase();
+                    const questionText = question.question.toLowerCase();
+                    const answerText = (question.answer || question.correct_answer || '').toLowerCase();
+                    
+                    if (!questionText.includes(searchText) && !answerText.includes(searchText)) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+        }
+        
+        function loadQuestionsPage() {
+            displayQuestions();
+        }
+        
+        async function loadStatsPage() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.stats;
+                    
+                    // Distribución por materias
+                    const subjectsChart = document.getElementById('subjectsChart');
+                    subjectsChart.innerHTML = createBarChart(stats.subjects, 'subject');
+                    
+                    // Distribución por universidad
+                    const universitiesChart = document.getElementById('universitiesChart');
+                    universitiesChart.innerHTML = createBarChart(stats.universities, 'university');
+                    
+                    // Temas populares
+                    const topicsList = document.getElementById('topTopicsList');
+                    topicsList.innerHTML = createTopicsList(stats.top_topics);
+                    
+                    // Rendimiento
+                    const performanceStats = document.getElementById('performanceStats');
+                    performanceStats.innerHTML = createPerformanceStats(stats);
+                    
+                    // Preguntas más vistas
+                    const mostViewed = document.getElementById('mostViewedQuestions');
+                    mostViewed.innerHTML = createMostViewedList(allQuestions);
+                }
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+                showNotification('Error al cargar estadísticas', 'error');
+            }
+        }
+        
+        function createBarChart(data, type) {
+            if (!data || data.length === 0) {
+                return '<p style="text-align: center; color: var(--text-muted);">No hay datos disponibles</p>';
+            }
+            
+            const maxCount = Math.max(...data.map(item => item.count));
+            let html = '';
+            
+            data.forEach(item => {
+                const percentage = maxCount > 0 ? (item.count / maxCount * 100) : 0;
+                const color = type === 'subject' ? 'var(--primary)' : 'var(--accent)';
+                
+                html += `
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="font-weight: 600;">${item._id}</span>
+                            <span>${item.count}</span>
+                        </div>
+                        <div style="height: 10px; background: var(--bg-elevated); border-radius: 5px; overflow: hidden;">
+                            <div style="width: ${percentage}%; height: 100%; background: ${color};"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return html;
+        }
+        
+        function createTopicsList(topics) {
+            if (!topics || topics.length === 0) {
+                return '<p style="text-align: center; color: var(--text-muted);">No hay temas disponibles</p>';
+            }
+            
+            let html = '';
+            topics.forEach((topic, index) => {
+                html += `
+                    <div style="margin-bottom: 10px; padding: 10px; background: var(--bg-elevated); border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-weight: 700; color: var(--text-primary);">#${index + 1}</span>
+                                <span style="margin-left: 10px; font-weight: 600;">${topic._id}</span>
+                            </div>
+                            <span style="color: var(--primary); font-weight: bold;">${topic.count}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return html;
+        }
+        
+        function createPerformanceStats(stats) {
+            const totalShown = stats.total_shown || 0;
+            const totalCorrect = allQuestions.reduce((sum, q) => sum + (q.times_correct || 0), 0);
+            const accuracy = totalShown > 0 ? ((totalCorrect / totalShown) * 100).toFixed(1) : 0;
+            
+            return `
+                <div style="text-align: center;">
+                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--success); margin-bottom: 10px;">
+                        ${accuracy}%
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 0.9rem;">
+                        Precisión global
+                    </div>
+                    <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary);">${totalShown}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Total respuestas</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--success);">${totalCorrect}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Correctas</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function createMostViewedList(questions) {
+            // Ordenar por veces mostradas
+            const sortedQuestions = [...questions]
+                .sort((a, b) => (b.times_shown || 0) - (a.times_shown || 0))
+                .slice(0, 5);
+            
+            if (sortedQuestions.length === 0) {
+                return '<p style="text-align: center; color: var(--text-muted);">No hay preguntas vistas</p>';
+            }
+            
+            let html = '';
+            sortedQuestions.forEach((question, index) => {
+                const preview = question.question.length > 50 ? 
+                    question.question.substring(0, 50) + '...' : question.question;
+                
+                html += `
+                    <div style="margin-bottom: 15px; padding: 12px; background: var(--bg-elevated); border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                    <span style="font-weight: 700; color: var(--text-primary);">#${index + 1}</span>
+                                    <span style="font-size: 0.8rem; background: rgba(16, 185, 129, 0.15); color: var(--primary); padding: 2px 8px; border-radius: 12px;">
+                                        ${question.subject}
+                                    </span>
+                                </div>
+                                <div style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 5px;">
+                                    ${preview}
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">
+                                    ${question.times_shown || 0}
+                                </div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">veces vista</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return html;
+        }
+        
+        function loadStudyPage() {
+            loadStudySubjects();
+        }
+        
+        async function loadStudySubjects() {
+            const container = document.getElementById('subjectButtons');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            // Agregar "Todas las materias"
+            const allBtn = document.createElement('div');
+            allBtn.className = 'subject-btn active';
+            allBtn.innerHTML = `
+                <i class="fas fa-layer-group"></i> Todas las materias
+                <span class="count">${allQuestions.length}</span>
+            `;
+            allBtn.dataset.subject = 'todos';
+            allBtn.addEventListener('click', function() {
+                document.querySelectorAll('.subject-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                studySelectedSubject = 'todos';
+                studySelectedTopic = 'todos';
+                loadStudyTopics();
+            });
+            container.appendChild(allBtn);
+            
+            // Agregar cada materia
+            const subjects = [...new Set(allQuestions.map(q => q.subject))];
+            subjects.forEach(subject => {
+                const count = allQuestions.filter(q => q.subject === subject).length;
+                if (count === 0) return;
+                
+                const btn = document.createElement('div');
+                btn.className = 'subject-btn';
+                btn.innerHTML = `
+                    <i class="fas fa-book"></i> ${subject}
+                    <span class="count">${count}</span>
+                `;
+                btn.dataset.subject = subject;
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.subject-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    studySelectedSubject = subject;
+                    studySelectedTopic = 'todos';
+                    loadStudyTopics();
+                });
+                container.appendChild(btn);
+            });
+        }
+        
+        async function loadStudyTopics() {
+            const container = document.getElementById('studyTopicButtons');
+            const topicSelector = document.getElementById('topicSelectorContainer');
+            
+            if (!studySelectedSubject || studySelectedSubject === 'todos') {
+                topicSelector.style.display = 'none';
+                return;
+            }
+            
+            try {
+                container.innerHTML = '';
+                topicSelector.style.display = 'block';
+                
+                const response = await fetch(`/api/subjects/${encodeURIComponent(studySelectedSubject)}/topics`);
+                const data = await response.json();
+                
+                if (data.success && data.topics.length > 0) {
+                    document.getElementById('currentSubjectName').textContent = studySelectedSubject;
+                    
+                    // Agregar "Todos los temas"
+                    const allBtn = document.createElement('div');
+                    allBtn.className = studySelectedTopic === 'todos' ? 'topic-btn-with-action all-topics active' : 'topic-btn-with-action all-topics';
+                    allBtn.innerHTML = `
+                        <div class="topic-btn-content">
+                            <i class="fas fa-layer-group"></i> Todos los temas
+                        </div>
+                    `;
+                    allBtn.dataset.topic = 'todos';
+                    allBtn.addEventListener('click', function() {
+                        document.querySelectorAll('.topic-btn-with-action').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        studySelectedTopic = 'todos';
+                    });
+                    container.appendChild(allBtn);
+                    
+                    // Agregar cada tema
+                    data.topics.forEach(topic => {
+                        const btn = document.createElement('div');
+                        btn.className = studySelectedTopic === topic ? 'topic-btn-with-action active' : 'topic-btn-with-action';
+                        btn.innerHTML = `
+                            <div class="topic-btn-content">
+                                <i class="fas fa-folder"></i> ${topic}
+                            </div>
+                        `;
+                        btn.dataset.topic = topic;
+                        btn.addEventListener('click', function() {
+                            document.querySelectorAll('.topic-btn-with-action').forEach(b => b.classList.remove('active'));
+                            this.classList.add('active');
+                            studySelectedTopic = topic;
+                        });
+                        container.appendChild(btn);
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando temas:', error);
+                topicSelector.style.display = 'none';
+            }
+        }
+        
+        async function getRandomQuestion() {
+            if (!studySelectedSubject) {
+                showNotification('Primero selecciona una materia', 'warning');
+                return;
+            }
+            
+            let url = `/api/questions/random`;
+            const params = [];
+            
+            if (studySelectedSubject !== 'todos') {
+                params.push(`subject=${encodeURIComponent(studySelectedSubject)}`);
+            }
+            
+            if (studySelectedTopic !== 'todos') {
+                params.push(`topic=${encodeURIComponent(studySelectedTopic)}`);
+            }
+            
+            if (params.length > 0) {
+                url += '?' + params.join('&');
+            }
+            
+            const getBtn = document.getElementById('getQuestionBtn');
+            const originalText = getBtn.innerHTML;
+            getBtn.innerHTML = '<i class="fas fa-spinner loading"></i> Buscando...';
+            getBtn.disabled = true;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayStudyQuestion(data.question);
+                } else {
+                    showNotification('No hay preguntas con estos filtros', 'warning');
+                }
+            } catch (error) {
+                console.error('Error obteniendo pregunta:', error);
+                showNotification('Error de conexión', 'error');
+            } finally {
+                getBtn.innerHTML = originalText;
+                getBtn.disabled = false;
+            }
+        }
+        
+        function displayStudyQuestion(question) {
+            document.getElementById('modalQuestionSubject').textContent = question.subject;
+            document.getElementById('modalQuestionTopic').textContent = question.topic;
+            document.getElementById('modalQuestionUniversity').textContent = question.university;
+            document.getElementById('modalQuestionText').innerHTML = question.question;
+            
+            const optionsContainer = document.getElementById('modalOptionsContainer');
+            optionsContainer.innerHTML = '';
+            
+            if (question.has_options && question.options && question.options.length > 0) {
+                let optionsHTML = '';
+                
+                question.options.forEach((option, index) => {
+                    const letter = String.fromCharCode(65 + index);
+                    optionsHTML += `
+                        <div class="option-card" onclick="checkAnswer(${index}, '${question._id}')" data-index="${index}">
+                            <div class="option-letter-circle">${letter}</div>
+                            <div class="option-content">${option}</div>
+                        </div>
+                    `;
+                });
+                
+                optionsContainer.innerHTML = optionsHTML;
+            }
+            
+            document.getElementById('modalAnswerText').innerHTML = question.answer || question.correct_answer || '';
+            document.getElementById('modalSolutionText').innerHTML = question.solution || '';
+            document.getElementById('modalAnswerSection').style.display = 'none';
+            
+            document.getElementById('studyQuestionModal').style.display = 'flex';
+            
+            if (window.MathJax) {
+                MathJax.typesetPromise()
+                    .catch(err => console.log('MathJax error:', err));
+            }
+        }
+        
+        function previewQuestion(questionId) {
+            const question = allQuestions.find(q => q._id === questionId);
+            if (question) {
+                displayStudyQuestion(question);
+            }
+        }
+        
+        function checkAnswer(selectedIndex, questionId) {
+            const question = allQuestions.find(q => q._id === questionId);
+            if (!question || !question.has_options) return;
+            
+            const optionCards = document.querySelectorAll('#modalOptionsContainer .option-card');
+            const isCorrect = selectedIndex === question.correct_option;
+            
+            optionCards.forEach(card => {
+                card.style.cursor = 'not-allowed';
+                card.onclick = null;
+            });
+            
+            const selectedCard = optionCards[selectedIndex];
+            if (selectedCard) {
+                if (isCorrect) {
+                    selectedCard.classList.add('correct');
+                    showNotification('✅ ¡Respuesta correcta!', 'success');
+                } else {
+                    selectedCard.classList.add('incorrect');
+                    showNotification('❌ Respuesta incorrecta', 'error');
+                }
+            }
+            
+            if (!isCorrect && question.correct_option >= 0) {
+                const correctCard = optionCards[question.correct_option];
+                if (correctCard) {
+                    correctCard.classList.add('correct');
+                }
+            }
+            
+            if (question.solution && question.solution.trim() !== '') {
+                document.getElementById('modalSolutionText').innerHTML = 
+                    `<div class="solution-box">
+                        <h4><i class="fas fa-list-ol"></i> Solución Detallada</h4>
+                        <div>${question.solution}</div>
+                    </div>`;
+            }
+        }
+        
+        function closeStudyModal() {
+            document.getElementById('studyQuestionModal').style.display = 'none';
+        }
+        
+        function showModalAnswer() {
+            document.getElementById('modalAnswerSection').style.display = 'block';
+            if (window.MathJax) {
+                MathJax.typesetPromise()
+                    .catch(err => console.log('MathJax error:', err));
+            }
+        }
+        
+        // Funciones para el modal de preguntas
+        function openModal(questionId = null) {
+            if (questionId) {
+                editQuestion(questionId);
+            } else {
+                resetModal();
+                document.getElementById('questionModal').classList.add('active');
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('questionModal').classList.remove('active');
+            resetModal();
+        }
+        
+        function resetModal() {
+            isEditMode = false;
+            currentEditQuestionId = null;
+            
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Nueva Pregunta';
+            document.getElementById('saveQuestionBtn').innerHTML = '<i class="fas fa-save"></i> Guardar Pregunta';
+            
+            document.getElementById('modalSubject').value = 'Matemáticas';
+            document.getElementById('modalNewSubject').style.display = 'none';
+            document.getElementById('modalNewSubject').value = '';
+            document.getElementById('modalTopic').value = '';
+            document.getElementById('modalQuestion').value = '';
+            document.getElementById('modalAnswer').value = '';
+            document.getElementById('modalSolution').value = '';
+            document.getElementById('modalUniversity').value = 'UNAM';
+            document.getElementById('modalNewUniversity').style.display = 'none';
+            document.getElementById('modalNewUniversity').value = '';
+            
+            if (document.getElementById('hasOptionsCheckbox')) {
+                document.getElementById('hasOptionsCheckbox').checked = false;
+                toggleOptions();
+                
+                document.getElementById('optionA').value = '';
+                document.getElementById('optionB').value = '';
+                document.getElementById('optionC').value = '';
+                document.getElementById('optionD').value = '';
+                
+                document.querySelectorAll('input[name="correctOption"]').forEach(radio => {
+                    radio.checked = false;
+                });
+            }
+        }
+        
+        function editQuestion(questionId) {
+            const question = allQuestions.find(q => q._id === questionId);
+            if (!question) {
+                showNotification('Pregunta no encontrada', 'error');
+                return;
+            }
+            
+            isEditMode = true;
+            currentEditQuestionId = questionId;
+            
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Editar Pregunta';
+            document.getElementById('saveQuestionBtn').innerHTML = '<i class="fas fa-save"></i> Actualizar Pregunta';
+            
+            document.getElementById('modalSubject').value = question.subject;
+            document.getElementById('modalTopic').value = question.topic;
+            document.getElementById('modalQuestion').value = question.question;
+            document.getElementById('modalSolution').value = question.solution || '';
+            document.getElementById('modalUniversity').value = question.university || 'UNAM';
+            
+            if (question.has_options && question.options && question.options.length > 0) {
+                document.getElementById('hasOptionsCheckbox').checked = true;
+                toggleOptions();
+                
+                document.getElementById('optionA').value = question.options[0] || '';
+                document.getElementById('optionB').value = question.options[1] || '';
+                document.getElementById('optionC').value = question.options[2] || '';
+                document.getElementById('optionD').value = question.options[3] || '';
+                
+                if (question.correct_option >= 0 && question.correct_option < 4) {
+                    const correctRadio = document.getElementById(`correctOption${String.fromCharCode(65 + question.correct_option)}`);
+                    if (correctRadio) {
+                        correctRadio.checked = true;
+                    }
+                }
+                
+                document.getElementById('modalAnswer').value = '';
+            } else {
+                document.getElementById('hasOptionsCheckbox').checked = false;
+                toggleOptions();
+                document.getElementById('modalAnswer').value = question.answer || question.correct_answer || '';
+            }
+            
+            document.getElementById('questionModal').classList.add('active');
+        }
+        
+        async function saveQuestion() {
+            // Obtener valores
+            const subject = document.getElementById('modalSubject').value;
+            const newSubject = document.getElementById('modalNewSubject').value.trim();
+            const finalSubject = subject === '_new_' && newSubject ? newSubject : subject;
+            
+            const topic = document.getElementById('modalTopic').value.trim();
+            const questionText = document.getElementById('modalQuestion').value.trim();
+            
+            const universitySelect = document.getElementById('modalUniversity').value;
+            const newUniversity = document.getElementById('modalNewUniversity').value.trim();
+            const finalUniversity = universitySelect === '_new_' && newUniversity ? newUniversity : universitySelect;
+            
+            // Validar
+            if (!finalSubject || !topic || !questionText) {
+                showNotification('Por favor completa todos los campos requeridos', 'error');
+                return;
+            }
+            
+            const questionData = {
+                subject: finalSubject,
+                topic: topic,
+                question: questionText,
+                university: finalUniversity,
+                has_options: document.getElementById('hasOptionsCheckbox').checked,
+                solution: document.getElementById('modalSolution').value.trim(),
+            };
+            
+            if (questionData.has_options) {
+                const options = [
+                    document.getElementById('optionA').value.trim(),
+                    document.getElementById('optionB').value.trim(),
+                    document.getElementById('optionC').value.trim(),
+                    document.getElementById('optionD').value.trim()
+                ];
+                
+                const emptyOptions = options.filter(opt => !opt);
+                if (emptyOptions.length > 0) {
+                    showNotification('Todas las opciones deben tener texto', 'error');
+                    return;
+                }
+                
+                const correctOptionInput = document.querySelector('input[name="correctOption"]:checked');
+                if (!correctOptionInput) {
+                    showNotification('Debes seleccionar la opción correcta', 'error');
+                    return;
+                }
+                
+                const correctOptionIndex = parseInt(correctOptionInput.value);
+                
+                questionData.options = options;
+                questionData.correct_option = correctOptionIndex;
+                questionData.correct_answer = `${String.fromCharCode(65 + correctOptionIndex)}. ${options[correctOptionIndex]}`;
+                questionData.answer = '';
+            } else {
+                const answer = document.getElementById('modalAnswer').value.trim();
+                if (!answer) {
+                    showNotification('La respuesta es requerida para preguntas abiertas', 'error');
+                    return;
+                }
+                
+                questionData.options = [];
+                questionData.correct_option = -1;
+                questionData.correct_answer = answer;
+                questionData.answer = answer;
+            }
+            
+            const saveBtn = document.getElementById('saveQuestionBtn');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner loading"></i> ' + 
+                (isEditMode ? 'Actualizando...' : 'Guardando...');
+            saveBtn.disabled = true;
+            
+            try {
+                let response;
+                let endpoint;
+                
+                if (isEditMode && currentEditQuestionId) {
+                    endpoint = `/api/questions/${currentEditQuestionId}`;
+                    response = await fetch(endpoint, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(questionData)
+                    });
+                } else {
+                    endpoint = '/api/questions';
+                    response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(questionData)
+                    });
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification(
+                        isEditMode ? '✅ Pregunta actualizada' : '✅ Pregunta guardada', 
+                        'success'
+                    );
+                    closeModal();
+                    await loadAllData(); // Recargar datos
+                } else {
+                    showNotification('❌ Error: ' + (data.error || 'Error desconocido'), 'error');
+                }
+            } catch (error) {
+                console.error('Error guardando pregunta:', error);
+                showNotification('❌ Error de conexión', 'error');
+            } finally {
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            }
+        }
+        
+        function confirmDelete(questionId) {
+            questionToDelete = questionId;
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+        
+        function closeConfirmModal() {
+            questionToDelete = null;
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+        
+        async function deleteQuestion() {
+            if (!questionToDelete) return;
+            
+            try {
+                const response = await fetch(`/api/questions/${questionToDelete}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('✅ Pregunta eliminada', 'success');
+                    closeConfirmModal();
+                    await loadAllData(); // Recargar datos
+                } else {
+                    showNotification('❌ Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error eliminando pregunta:', error);
+                showNotification('❌ Error de conexión', 'error');
+            }
+        }
+        
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 4000);
+        }
+        
+        async function logout() {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiStudy - Iniciar Sesión</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS Propio -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: var(--bg-dark);
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: var(--bg-card);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 440px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        
+        .login-header {
+            padding: 30px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .login-logo {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 1.8rem;
+            color: white;
+        }
+        
+        .login-title {
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .login-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .login-body {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-sm);
+            font-size: 0.95rem;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+        }
+        
+        .role-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .role-option {
+            text-align: center;
+            padding: 14px;
+            background: var(--bg-elevated);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .role-option:hover {
+            border-color: var(--primary);
+        }
+        
+        .role-option.selected {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .role-option i {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        
+        .role-option .role-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        
+        .role-option .role-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+        }
+        
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .login-footer {
+            padding: 20px 30px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            background: var(--bg-elevated);
+        }
+        
+        .mode-toggle {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .toggle-btn:hover {
+            text-decoration: underline;
+        }
+        
+        .demo-accounts {
+            margin-top: 25px;
+            padding: 15px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: var(--border-radius-sm);
+        }
+        
+        .demo-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--warning);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .demo-account {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.1);
+        }
+        
+        .demo-account:last-child {
+            border-bottom: none;
+        }
+        
+        .demo-account .info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .demo-account .role-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        .maestro-badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--primary);
+        }
+        
+        .alumno-badge {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+        
+        .demo-account .copy-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: var(--transition);
+        }
+        
+        .demo-account .copy-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: var(--border-radius-sm);
+            padding: 12px;
+            margin-bottom: 20px;
+            color: #fca5a5;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h1 class="login-title">MultiStudy</h1>
+                <p class="login-subtitle">Tu compañero de estudio inteligente</p>
+            </div>
+            
+            <div class="login-body">
+                <!-- Formulario de Login (por defecto) -->
+                <div id="loginForm">
+                    <h3 style="color: var(--text-primary); margin-bottom: 20px; text-align: center;">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </h3>
+                    
+                    <div class="error-message" id="loginError"></div>
+                    
+                    <div class="form-group">
+                        <label for="loginEmail">
+                            <i class="fas fa-envelope"></i> Correo Electrónico
+                        </label>
+                        <input type="email" class="form-control" id="loginEmail" 
+                               placeholder="tu@correo.com" autocomplete="email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="loginPassword">
+                            <i class="fas fa-lock"></i> Contraseña
+                        </label>
+                        <input type="password" class="form-control" id="loginPassword" 
+                               placeholder="••••••••" autocomplete="current-password">
+                    </div>
+                    
+                    <button class="login-btn" id="loginBtn" onclick="login()">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </button>
+                    
+                    <div class="mode-toggle">
+                        <span style="color: var(--text-muted);">¿No tienes cuenta? </span>
+                        <button class="toggle-btn" onclick="showRegister()">Regístrate aquí</button>
+                    </div>
+                </div>
+                
+                <!-- Formulario de Registro (oculto por defecto) -->
+                <div id="registerForm" style="display: none;">
+                    <h3 style="color: var(--text-primary); margin-bottom: 20px; text-align: center;">
+                        <i class="fas fa-user-plus"></i> Crear Cuenta
+                    </h3>
+                    
+                    <div class="error-message" id="registerError"></div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label for="registerNombre">
+                                <i class="fas fa-user"></i> Nombre
+                            </label>
+                            <input type="text" class="form-control" id="registerNombre" 
+                                   placeholder="Juan" autocomplete="given-name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="registerApellido">
+                                <i class="fas fa-user"></i> Apellido
+                            </label>
+                            <input type="text" class="form-control" id="registerApellido" 
+                                   placeholder="Pérez" autocomplete="family-name">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="registerEmail">
+                            <i class="fas fa-envelope"></i> Correo Electrónico
+                        </label>
+                        <input type="email" class="form-control" id="registerEmail" 
+                               placeholder="tu@correo.com" autocomplete="email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="registerPassword">
+                            <i class="fas fa-lock"></i> Contraseña
+                        </label>
+                        <input type="password" class="form-control" id="registerPassword" 
+                               placeholder="••••••••" autocomplete="new-password">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-user-tag"></i> Tipo de Usuario
+                        </label>
+                        <div class="role-selector">
+                            <div class="role-option" data-role="alumno" onclick="selectRole('alumno')">
+                                <i class="fas fa-user-graduate"></i>
+                                <div class="role-name">Alumno</div>
+                                <div class="role-desc">Estudiar preguntas</div>
+                            </div>
+                            <div class="role-option" data-role="maestro" onclick="selectRole('maestro')">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <div class="role-name">Maestro</div>
+                                <div class="role-desc">Crear y editar preguntas</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="login-btn" id="registerBtn" onclick="register()">
+                        <i class="fas fa-user-plus"></i> Crear Cuenta
+                    </button>
+                    
+                    <div class="mode-toggle">
+                        <span style="color: var(--text-muted);">¿Ya tienes cuenta? </span>
+                        <button class="toggle-btn" onclick="showLogin()">Inicia sesión aquí</button>
+                    </div>
+                </div>
+                
+                <!-- Cuentas de demostración -->
+                <div class="demo-accounts">
+                    <div class="demo-title">
+                        <i class="fas fa-vial"></i> Cuentas de Demostración
+                    </div>
+                    
+                    <div class="demo-account">
+                        <div class="info">
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.9rem;">maestro@multi.com</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Contraseña: maestro123</div>
+                            </div>
+                            <span class="role-badge maestro-badge">Maestro</span>
+                        </div>
+                        <button class="copy-btn" onclick="fillDemo('maestro')">
+                            <i class="fas fa-copy"></i> Usar
+                        </button>
+                    </div>
+                    
+                    <div class="demo-account">
+                        <div class="info">
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.9rem;">alumno@multi.com</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Contraseña: alumno123</div>
+                            </div>
+                            <span class="role-badge alumno-badge">Alumno</span>
+                        </div>
+                        <button class="copy-btn" onclick="fillDemo('alumno')">
+                            <i class="fas fa-copy"></i> Usar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="login-footer">
+                <p>© 2024 MultiStudy - Plataforma de estudio interactiva</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script>
+        let selectedRole = 'alumno';
+        
+        // Seleccionar rol
+        function selectRole(role) {
+            selectedRole = role;
+            document.querySelectorAll('.role-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.querySelector(`.role-option[data-role="${role}"]`).classList.add('selected');
+        }
+        
+        // Cambiar a formulario de registro
+        function showRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            selectRole('alumno'); // Resetear a alumno por defecto
+        }
+        
+        // Cambiar a formulario de login
+        function showLogin() {
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            clearErrors();
+        }
+        
+        // Rellenar datos de demo
+        function fillDemo(type) {
+            if (type === 'maestro') {
+                document.getElementById('loginEmail').value = 'maestro@multi.com';
+                document.getElementById('loginPassword').value = 'maestro123';
+                showLogin();
+            } else if (type === 'alumno') {
+                document.getElementById('loginEmail').value = 'alumno@multi.com';
+                document.getElementById('loginPassword').value = 'alumno123';
+                showLogin();
+            }
+        }
+        
+        // Mostrar error
+        function showError(form, message) {
+            const errorDiv = document.getElementById(form + 'Error');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            setTimeout(() => {
+                errorDiv.classList.remove('show');
+            }, 5000);
+        }
+        
+        // Limpiar errores
+        function clearErrors() {
+            document.getElementById('loginError').classList.remove('show');
+            document.getElementById('registerError').classList.remove('show');
+        }
+        
+        // Login
+        async function login() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            if (!email || !password) {
+                showError('login', 'Por favor completa todos los campos');
+                return;
+            }
+            
+            const btn = document.getElementById('loginBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, password})
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Redirigir a la página principal
+                    window.location.href = '/';
+                } else {
+                    showError('login', data.error || 'Error al iniciar sesión');
+                }
+            } catch (error) {
+                showError('login', 'Error de conexión');
+                console.error('Login error:', error);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+        
+        // Registro
+        async function register() {
+            const nombre = document.getElementById('registerNombre').value.trim();
+            const apellido = document.getElementById('registerApellido').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value.trim();
+            
+            if (!nombre || !apellido || !email || !password) {
+                showError('register', 'Por favor completa todos los campos');
+                return;
+            }
+            
+            const btn = document.getElementById('registerBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando cuenta...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        nombre,
+                        apellido,
+                        email,
+                        password,
+                        rol: selectedRole
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Redirigir a la página principal
+                    window.location.href = '/';
+                } else {
+                    showError('register', data.error || 'Error al crear cuenta');
+                }
+            } catch (error) {
+                showError('register', 'Error de conexión');
+                console.error('Register error:', error);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+        
+        // Enter para enviar formularios
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (document.getElementById('loginForm').style.display !== 'none') {
+                    login();
+                } else {
+                    register();
+                }
+            }
+        });
+        
+        // Inicializar con alumno seleccionado
+        document.addEventListener('DOMContentLoaded', function() {
+            selectRole('alumno');
+        });
+    </script>
+</body>
+</html>

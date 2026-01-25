@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudiador Multi-Materias</title>
+    
+    <!-- MathJax -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\$$', '\$$']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS Propio -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="logo-text">
+                <h1>MultiStudy</h1>
+                <p>Tu compañero de estudio</p>
+            </div>
+        </div>
+        
+        <nav class="menu">
+            <div class="menu-item active" data-page="study">
+                <i class="fas fa-book-open"></i>
+                <span>Modo Estudio</span>
+            </div>
+            <div class="menu-item" data-page="questions">
+                <i class="fas fa-list"></i>
+                <span>Banco de Preguntas</span>
+            </div>
+            <div class="menu-item" id="openModalBtn">
+                <i class="fas fa-plus-circle"></i>
+                <span>Nueva Pregunta</span>
+            </div>
+        </nav>
+        
+        <div class="stats-sidebar">
+            <div class="stats-header">
+                <i class="fas fa-chart-pie"></i>
+                <span>Resumen</span>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-icon"><i class="fas fa-question-circle"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="sidebarTotal">0</span>
+                    <span class="stat-label">Preguntas</span>
+                </div>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-icon"><i class="fas fa-book"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="sidebarSubjects">0</span>
+                    <span class="stat-label">Materias</span>
+                </div>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-icon"><i class="fas fa-eye"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="sidebarShown">0</span>
+                    <span class="stat-label">Estudiadas</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Página: Modo Estudio -->
+        <div class="page active" id="studyPage">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h2 class="page-title">
+                        <i class="fas fa-book-open"></i> 
+                        Modo Estudio
+                    </h2>
+                    <p class="page-subtitle">Selecciona una materia y comienza a practicar</p>
+                </div>
+                <button class="btn btn-ghost" id="showHelpBtn">
+                    <i class="fas fa-question-circle"></i>
+                </button>
+            </div>
+            
+            <!-- Selector de materias rediseñado -->
+            <div class="study-selector" id="subjectSelectorContainer">
+                <div class="study-selector-header">
+                    <div class="section-title">
+                        <i class="fas fa-th-large"></i>
+                        <span>Selecciona tu materia</span>
+                    </div>
+                </div>
+                
+                <div class="study-selector-body">
+                    <div class="subjects-grid" id="subjectButtons">
+                        <!-- Las materias se cargan dinamicamente -->
+                    </div>
+                    
+                    <!-- Temas -->
+                    <div id="topicSelectorContainer" class="topics-section" style="display: none;">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <i class="fas fa-folder-open"></i>
+                                <span>Temas de <strong id="currentSubjectName"></strong></span>
+                            </div>
+                        </div>
+                        <div class="topics-chips" id="studyTopicButtons">
+                            <!-- Los temas se cargan aqui -->
+                        </div>
+                    </div>
+                    
+                    <!-- Boton para comenzar -->
+                    <div class="study-action">
+                        <button class="btn btn-primary btn-lg" id="getQuestionBtn">
+                            <i class="fas fa-dice"></i>
+                            <span>Obtener Pregunta</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tarjeta de pregunta rediseñada -->
+            <div class="stud-card" id="questionCard" style="display: none;">
+                
+                
+               
+                
+               
+                <!-- Respuesta y solucion -->
+               
+                <div class="contrls-row">
+                    
+                    <button class="show-aswer-btn" id="showAnswerBtn" style="display: none;">
+                        <i class="fas fa-eye"></i> Ver Respuesta
+                    </button>
+                </div>
+            </div>
+            
+            <div id="noQuestionsMessage" class="empty-state" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <h3>No hay preguntas todavia</h3>
+                <p>Agrega tu primera pregunta para comenzar a estudiar</p>
+                <button class="btn btn-primary" id="addFirstQuestionBtn">
+                    <i class="fas fa-plus"></i>
+                    <span>Agregar Primera Pregunta</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Página: Todas las Preguntas -->
+        <div class="page" id="questionsPage">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h2 class="page-title">
+                        <i class="fas fa-list"></i> 
+                        Banco de Preguntas
+                    </h2>
+                    <p class="page-subtitle">Explora y administra todas tus preguntas</p>
+                </div>
+                <button class="btn btn-primary" id="openModalFromListBtn">
+                    <i class="fas fa-plus"></i>
+                    <span>Nueva Pregunta</span>
+                </button>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="filter-container">
+                <select class="filter-select" id="subjectFilter">
+                    <option value="todos">Todas las materias</option>
+                </select>
+                
+                <select class="filter-select" id="topicFilter">
+                    <option value="todos">Todos los temas</option>
+                </select>
+                
+                <select class="filter-select" id="universityFilter">
+                    <option value="todos">Todas las universidades</option>
+                    <option value="UNAM">UNAM</option>
+                    <option value="IPN">IPN</option>
+                    <option value="UAM">UAM</option>
+                    <option value="TEC">TEC</option>
+                </select>
+                
+                <button class="btn btn-outline btn-sm" id="clearFiltersBtn">
+                    <i class="fas fa-times"></i> Limpiar
+                </button>
+            </div>
+            
+            <!-- Lista de preguntas -->
+            <div class="questions-list" id="questionsList">
+                <!-- Las preguntas se cargan aqui -->
+            </div>
+            
+            <div id="noQuestionsMessageList" class="empty-state" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3>Sin resultados</h3>
+                <p>No hay preguntas con estos filtros</p>
+                <button class="btn btn-outline" id="clearFiltersMessageBtn">
+                    <i class="fas fa-times"></i> Limpiar Filtros
+                </button>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- MODAL DE PREGUNTA (Modo Estudio) -->
+    <div class="modal-overlay" id="studyQuestionModal" style="display:none;">
+      <div class="modal study-modal">
+        
+        <div class="modal-header">
+          <div class="question-badges">
+            <span class="badge badge-subject" id="modalQuestionSubject"></span>
+            <span class="badge badge-topic" id="modalQuestionTopic"></span>
+            <span class="badge badge-university" id="modalQuestionUniversity"></span>
+          </div>
+          <button class="modal-close" onclick="closeStudyModal()">&times;</button>
+        </div>
+    
+        <div class="modal-body">
+          <div class="question-content" id="modalQuestionText"></div>
+    
+          <!-- Opciones -->
+          <div id="modalOptionsContainer"></div>
+    
+          <!-- Respuesta -->
+          <div class="answer-section" id="modalAnswerSection" style="display:none;">
+            <div id="modalAnswerText"></div>
+            <div id="modalSolutionText" style="margin-top:10px;"></div>
+          </div>
+        </div>
+    
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="showModalAnswer()">
+            <i class="fas fa-eye"></i> Ver respuesta
+          </button>
+          <button class="btn btn-primary" onclick="getRandomQuestion()">
+            <i class="fas fa-dice"></i> Nueva pregunta
+          </button>
+        </div>
+    
+      </div>
+    </div>
+    
+    
+    <!-- Modal para agregar preguntas -->
+    <div class="modal-overlay" id="questionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-plus-circle"></i> Nueva Pregunta</h3>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group modal-subject-group">
+                    <label><i class="fas fa-book"></i> Materia</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select class="form-control" id="modalSubject" style="flex: 1;">
+                            <option value="Matemáticas">Matemáticas</option>
+                            <option value="Física">Física</option>
+                            <option value="Química">Química</option>
+                            <option value="Biología">Biología</option>
+                            <option value="Historia">Historia</option>
+                            <option value="Geografía">Geografía</option>
+                        </select>
+                        <input type="text" class="form-control" id="modalNewSubject" 
+                               placeholder="Otra materia" style="flex: 1; display: none;">
+                    </div>
+                    <div class="form-hint">
+                        <i class="fas fa-info-circle"></i> Selecciona una materia existente o escribe una nueva
+                    </div>
+                </div>
+                                
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Tema</label>
+                    <input type="text" class="form-control" id="modalTopic" 
+                           placeholder="Ej: Álgebra, Cálculo, Geometría">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-question-circle"></i> Pregunta</label>
+                    
+                    <!-- TECLADO MATEMÁTICO COMPLETO PARA PREGUNTA -->
+                    <div class="math-toolbar" id="questionMathToolbar">
+                        <div class="toolbar-section">
+                            <span class="section-label">Operaciones:</span>
+                            <button class="math-btn" data-symbol="\frac{ }{ }" title="Fracción">
+                                <i class="fas fa-divide"></i> Fracción
+                            </button>
+                            <button class="math-btn" data-symbol="\sqrt{ }" title="Raíz cuadrada">√</button>
+                            <button class="math-btn" data-symbol="\sqrt[n]{ }" title="Raíz n-ésima">ⁿ√</button>
+                            <button class="math-btn" data-symbol="^{ }" title="Exponente">x²</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Trig:</span>
+                            <button class="math-btn" data-symbol="\sin(" title="Seno">sin</button>
+                            <button class="math-btn" data-symbol="\cos(" title="Coseno">cos</button>
+                            <button class="math-btn" data-symbol="\tan(" title="Tangente">tan</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Cálculo:</span>
+                            <button class="math-btn" data-symbol="\lim_{ \to }" title="Límite">lim</button>
+                            <button class="math-btn" data-symbol="\int_{ }^{ }" title="Integral">∫</button>
+                            <button class="math-btn" data-symbol="\sum_{ }^{ }" title="Sumatoria">∑</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Símbolos:</span>
+                            <button class="math-btn" data-symbol="\infty" title="Infinito">∞</button>
+                            <button class="math-btn" data-symbol="\pi" title="Pi">π</button>
+                            <button class="math-btn" data-symbol="\theta" title="Theta">θ</button>
+                            <button class="math-btn" data-symbol="\alpha" title="Alpha">α</button>
+                            <button class="math-btn" data-symbol="\beta" title="Beta">β</button>
+                            <button class="math-btn" data-symbol="\pm" title="Más menos">±</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Estructuras:</span>
+                            <button class="math-btn" data-symbol="( )" title="Paréntesis">( )</button>
+                            <button class="math-btn" data-symbol="[ ]" title="Corchetes">[ ]</button>
+                            <button class="math-btn" data-symbol="\{ \}" title="Llaves">{ }</button>
+                        </div>
+                    </div>
+                    
+                    <textarea class="form-control" id="modalQuestion" 
+                              placeholder="Escribe tu pregunta... (usa los botones arriba para símbolos)" 
+                              rows="4"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-check-circle"></i> Respuesta</label>
+                    
+                    <!-- TECLADO MATEMÁTICO COMPLETO PARA RESPUESTA -->
+                    <div class="math-toolbar" id="answerMathToolbar">
+                        <div class="toolbar-section">
+                            <span class="section-label">Operaciones:</span>
+                            <button class="math-btn" data-symbol="\frac{ }{ }" title="Fracción">
+                                <i class="fas fa-divide"></i> Fracción
+                            </button>
+                            <button class="math-btn" data-symbol="\sqrt{ }" title="Raíz cuadrada">√</button>
+                            <button class="math-btn" data-symbol="\sqrt[n]{ }" title="Raíz n-ésima">ⁿ√</button>
+                            <button class="math-btn" data-symbol="^{ }" title="Exponente">x²</button>
+                            <button class="math-btn" data-symbol="=" title="Igual">=</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Símbolos:</span>
+                            <button class="math-btn" data-symbol="\pi" title="Pi">π</button>
+                            <button class="math-btn" data-symbol="\infty" title="Infinito">∞</button>
+                            <button class="math-btn" data-symbol="\pm" title="Más menos">±</button>
+                            <button class="math-btn" data-symbol="\neq" title="Diferente">≠</button>
+                            <button class="math-btn" data-symbol="\leq" title="Menor o igual">≤</button>
+                            <button class="math-btn" data-symbol="\geq" title="Mayor o igual">≥</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Estructuras:</span>
+                            <button class="math-btn" data-symbol="( )" title="Paréntesis">( )</button>
+                            <button class="math-btn" data-symbol="[ ]" title="Corchetes">[ ]</button>
+                            <button class="math-btn" data-symbol="\{ \}" title="Llaves">{ }</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Checkbox para opciones múltiples -->
+                    <div style="margin: 12px 0 8px 0;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem;">
+                            <input type="checkbox" id="hasOptionsCheckbox" onchange="toggleOptions()">
+                            <span><i class="fas fa-list-ol"></i> Es una pregunta de opción múltiple (4 opciones)</span>
+                        </label>
+                    </div>
+                    
+                    <!-- RESPUESTA ABIERTA (por defecto) -->
+                    <div id="openAnswerSection">
+                        <textarea class="form-control" id="modalAnswer" 
+                                  placeholder="Escribe la respuesta... (usa los botones arriba para símbolos)" 
+                                  rows="3"></textarea>
+                    </div>
+                    
+                    <!-- SECCIÓN DE OPCIONES (oculta por defecto) -->
+                    <div id="optionsSection" style="display: none;">
+                        <h4><i class="fas fa-check-circle"></i> Opciones de Respuesta (selecciona la correcta)</h4>
+                        
+                        <div class="options-grid">
+                            <!-- Opción A -->
+                            <div class="option-group">
+                                <label style="color: #ef4444;"><i class="fas fa-circle"></i> Opción A</label>
+                                <textarea class="form-control option-input" id="optionA" 
+                                          placeholder="Texto de la opción A" rows="2"
+                                          onfocus="handleOptionFocus(event)"></textarea>
+                                <div style="margin-top: 6px;">
+                                    <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.8rem;">
+                                        <input type="radio" name="correctOption" value="0" id="correctOptionA">
+                                        <span>Es la correcta</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Opción B -->
+                            <div class="option-group">
+                                <label style="color: #3b82f6;"><i class="fas fa-circle"></i> Opción B</label>
+                                <textarea class="form-control option-input" id="optionB" 
+                                            placeholder="Texto de la opción B" rows="2"
+                                            onfocus="handleOptionFocus(event)"></textarea>
+                                <div style="margin-top: 6px;">
+                                    <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.8rem;">
+                                        <input type="radio" name="correctOption" value="1" id="correctOptionB">
+                                        <span>Es la correcta</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Opción C -->
+                            <div class="option-group">
+                                <label style="color: #22c55e;"><i class="fas fa-circle"></i> Opción C</label>
+                                <textarea class="form-control option-input" id="optionC" 
+                                          placeholder="Texto de la opción C" rows="2"
+                                           onfocus="handleOptionFocus(event)"></textarea>
+                                <div style="margin-top: 6px;">
+                                    <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.8rem;">
+                                        <input type="radio" name="correctOption" value="2" id="correctOptionC">
+                                        <span>Es la correcta</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Opción D -->
+                            <div class="option-group">
+                                <label style="color: #f59e0b;"><i class="fas fa-circle"></i> Opción D</label>
+                                <textarea class="form-control option-input" id="optionD" 
+                                          placeholder="Texto de la opción D" rows="2"
+                                           onfocus="handleOptionFocus(event)"></textarea>
+                                <div style="margin-top: 6px;">
+                                    <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.8rem;">
+                                        <input type="radio" name="correctOption" value="3" id="correctOptionD">
+                                        <span>Es la correcta</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-hint" style="margin-top: 12px;">
+                            <i class="fas fa-info-circle"></i> Marca con el botón de radio cuál es la opción correcta
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-list-ol"></i> Solución Detallada (Opcional)</label>
+                    
+                    <!-- TECLADO MATEMÁTICO COMPLETO PARA SOLUCIÓN -->
+                    <div class="math-toolbar" id="solutionMathToolbar">
+                        <div class="toolbar-section">
+                            <span class="section-label">Operaciones:</span>
+                            <button class="math-btn" data-symbol="\frac{ }{ }" title="Fracción">
+                                <i class="fas fa-divide"></i> Fracción
+                            </button>
+                            <button class="math-btn" data-symbol="\sqrt{ }" title="Raíz cuadrada">√</button>
+                            <button class="math-btn" data-symbol="\sqrt[n]{ }" title="Raíz n-ésima">ⁿ√</button>
+                            <button class="math-btn" data-symbol="^{ }" title="Exponente">x²</button>
+                            <button class="math-btn" data-symbol="=" title="Igual">=</button>
+                            <button class="math-btn" data-symbol="\Rightarrow" title="Implica">⇒</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Cálculo:</span>
+                            <button class="math-btn" data-symbol="\int_{ }^{ }" title="Integral">∫</button>
+                            <button class="math-btn" data-symbol="\frac{d}{dx}" title="Derivada">d/dx</button>
+                            <button class="math-btn" data-symbol="\lim_{ \to }" title="Límite">lim</button>
+                            <button class="math-btn" data-symbol="\sum_{ }^{ }" title="Sumatoria">∑</button>
+                        </div>
+                        
+                        <div class="toolbar-section">
+                            <span class="section-label">Símbolos:</span>
+                            <button class="math-btn" data-symbol="\pi" title="Pi">π</button>
+                            <button class="math-btn" data-symbol="\theta" title="Theta">θ</button>
+                            <button class="math-btn" data-symbol="\alpha" title="Alpha">α</button>
+                            <button class="math-btn" data-symbol="\beta" title="Beta">β</button>
+                            <button class="math-btn" data-symbol="\pm" title="Más menos">±</button>
+                        </div>
+                    </div>
+                    
+                    <textarea class="form-control" id="modalSolution" 
+                              placeholder="Explica los pasos para llegar a la respuesta..." 
+                              rows="4"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-university"></i> Universidad</label>
+                    <select class="form-control" id="modalUniversity">
+                        <option value="UNAM">UNAM</option>
+                        <option value="IPN">IPN</option>
+                        <option value="UAM">UAM</option>
+                        <option value="TEC">TEC</option>
+                        <option value="EXANI">EXANI</option>
+                        <option value="NAVAL">NAVAL</option>
+                        <option value="_new_">✏️ Otra universidad...</option>
+                    </select>
+                
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="modalNewUniversity"
+                        placeholder="Escribe la universidad"
+                        style="margin-top: 8px; display: none;"
+                    />
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelModalBtn">Cancelar</button>
+                <button class="btn btn-primary" id="saveQuestionBtn">
+                    <i class="fas fa-save"></i> Guardar Pregunta
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de ayuda -->
+    <div class="modal-overlay" id="helpModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-question-circle"></i> Ayuda</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4 style="margin-bottom: 12px; color: var(--text-primary);">📚 Cómo usar el Estudiador</h4>
+                <ul style="margin: 0 0 20px 20px; line-height: 1.7; color: var(--text-secondary); font-size: 0.9rem;">
+                    <li><strong>Modo Estudio:</strong> Selecciona una materia y tema, luego obtén preguntas aleatorias</li>
+                    <li><strong>Ver todas:</strong> Explora todas las preguntas organizadas por materia y tema</li>
+                    <li><strong>Estadísticas:</strong> Revisa el progreso y distribución de tus preguntas</li>
+                    <li><strong>Agregar preguntas:</strong> Usa el botón "+" para añadir nuevas preguntas con fórmulas LaTeX</li>
+                </ul>
+                
+                <h4 style="margin-bottom: 12px; color: var(--text-primary);">📝 Formato de preguntas</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Puedes usar fórmulas matemáticas con LaTeX:</p>
+                <ul style="margin: 8px 0 20px 20px; color: var(--text-secondary); font-size: 0.9rem;">
+                    <li>En línea: <code style="background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px;">$\frac{1}{2}$</code></li>
+                    <li>En bloque: <code style="background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px;">$$\int_0^1 x^2 dx$$</code></li>
+                </ul>
+                
+                <h4 style="margin-bottom: 12px; color: var(--text-primary);">📊 Tipos de preguntas</h4>
+                <ul style="margin: 0 0 20px 20px; color: var(--text-secondary); font-size: 0.9rem;">
+                    <li><strong>Preguntas abiertas:</strong> El usuario escribe o muestra la respuesta</li>
+                    <li><strong>Opción múltiple:</strong> Elige entre 4 opciones, solo una es correcta</li>
+                </ul>
+                
+                <h4 style="margin-bottom: 12px; color: var(--text-primary);">⌨️ Atajos de Teclado</h4>
+                <ul style="margin: 0 0 0 20px; color: var(--text-secondary); font-size: 0.9rem;">
+                    <li><code style="background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px;">Ctrl+Shift+F</code> - Insertar fracción</li>
+                    <li><code style="background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px;">Ctrl+Shift+S</code> - Insertar raíz</li>
+                    <li><code style="background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px;">Ctrl+Shift+I</code> - Insertar integral</li>
+                    <li><code style="background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px;">Ctrl+Shift+E</code> - Insertar exponente</li>
+                    <li><code style="background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px;">Ctrl+Shift+P</code> - Insertar π</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary">Entendido</button>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- JavaScript Propio -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
