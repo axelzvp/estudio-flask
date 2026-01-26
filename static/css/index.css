@@ -1,4 +1,3 @@
-
 /* MULTIESTUDIO - CSS OPTIMIZADO PARA MÓVIL */
 /* Modificaciones específicas para mejor experiencia en celular */
 
@@ -40,153 +39,6 @@ body {
     line-height: 1.4;
     font-size: 13px; /* Tamaño base más pequeño para móvil */
 }
-
-
-
-
-
-
-/* MODIFICACIONES PARA EL MODAL DE PREGUNTAS EN MÓVIL */
-
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: none;
-    justify-content: center;
-    align-items: flex-start;
-    z-index: 1000;
-    padding: 0;
-    backdrop-filter: blur(3px);
-    overflow-y: auto;
-}
-
-.modal-overlay.active {
-    display: flex;
-    animation: fadeIn 0.2s ease;
-}
-
-.study-modal {
-    background: white;
-    border-radius: 0;
-    width: 100%;
-    min-height: 100vh; /* Cambié de height a min-height */
-    max-height: 100vh; /* Asegura que no exceda la altura */
-    overflow-y: auto;
-    box-shadow: none;
-    animation: slideUp 0.3s ease;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Modal body debe tener scroll interno */
-.modal-body {
-    padding: 1rem;
-    flex: 1;
-    overflow-y: auto;
-    max-height: calc(100vh - 130px); /* Resta altura del header y footer */
-}
-
-/* Modal footer - Fijo en la parte inferior */
-.modal-footer {
-    padding: 0.8rem 1rem;
-    border-top: 1px solid var(--gray-light);
-    display: flex;
-    justify-content: space-between;
-    gap: 0.6rem;
-    background: white;
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
-    flex-shrink: 0;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); /* Sombra sutil arriba */
-}
-
-/* Botones más compactos en móvil */
-.modal-btn {
-    padding: 0.6rem 1rem;
-    border-radius: 18px;
-    font-weight: 500;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: var(--transition);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    border: 1px solid transparent;
-    flex: 1;
-    min-height: 40px;
-    white-space: nowrap; /* Evita que el texto se parta */
-}
-
-/* Para pantallas muy pequeñas */
-@media (max-width: 480px) {
-    .modal-footer {
-        padding: 0.7rem;
-        gap: 0.5rem;
-    }
-    
-    .modal-btn {
-        padding: 0.5rem 0.8rem;
-        font-size: 0.8rem;
-        min-height: 36px;
-    }
-    
-    .modal-body {
-        max-height: calc(100vh - 120px); /* Menos espacio en móvil */
-    }
-}
-
-/* Para pantallas más grandes (tablet/desktop) */
-@media (min-width: 768px) {
-    .study-modal {
-        border-radius: var(--border-radius);
-        margin: 1rem;
-        height: auto;
-        max-height: 90vh;
-        min-height: auto; /* Reset para desktop */
-        width: 90%;
-        max-width: 700px;
-    }
-    
-    .modal-overlay {
-        align-items: center;
-        padding: 1rem;
-    }
-    
-    .modal-body {
-        max-height: calc(90vh - 130px); /* Ajustado para modal más pequeño */
-    }
-}
-
-/* Asegurar que la respuesta se muestre bien */
-.answer-section {
-    background: var(--light);
-    border-radius: 6px;
-    padding: 0.8rem;
-    margin-top: 1rem;
-    max-height: 300px; /* Límite para no hacer muy largo el contenido */
-    overflow-y: auto;
-}
-
-.solution-content {
-    max-height: 200px; /* Límite para la solución */
-    overflow-y: auto;
-}
-
-
-
-
-
-
-
-
-
-
 
 /* ========== HEADER ========== */
 .main-header {
@@ -587,7 +439,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* ========== MODAL DE PREGUNTA (MODO ESTUDIO) ========== */
+/* ========== MODAL DE PREGUNTA (MODO ESTUDIO) - CORREGIDO ========== */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -618,8 +470,7 @@ body {
     background: white;
     border-radius: 0;
     width: 100%;
-    height: 100vh;
-    max-height: none;
+    min-height: 100vh; /* Cambiado de height a min-height */
     overflow-y: auto;
     box-shadow: none;
     animation: slideUp 0.3s ease;
@@ -704,10 +555,13 @@ body {
     color: var(--dark);
 }
 
+/* MODAL BODY CON SCROLL INTERNO */
 .modal-body {
     padding: 1rem;
     flex: 1;
     overflow-y: auto;
+    /* Altura máxima para que los botones sean siempre visibles */
+    max-height: calc(100vh - 130px); /* 130px = header + footer */
 }
 
 .question-content {
@@ -755,6 +609,12 @@ body {
     background: rgba(220, 38, 38, 0.1);
 }
 
+.option-card.correct-answer {
+    border-color: var(--success);
+    background: rgba(5, 150, 105, 0.15);
+    border-width: 2px;
+}
+
 .option-letter {
     width: 24px;
     height: 24px;
@@ -786,19 +646,26 @@ body {
     color: white;
 }
 
+.option-card.correct-answer .option-letter {
+    background: var(--success);
+    color: white;
+}
+
 .option-text {
     flex: 1;
     font-size: 0.9rem;
     line-height: 1.4;
 }
 
-/* Sección de respuesta */
+/* Sección de respuesta con scroll si es muy larga */
 .answer-section {
     background: var(--light);
     border-radius: 6px;
     padding: 0.8rem;
     margin-top: 1rem;
     display: none;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 .answer-title {
@@ -824,6 +691,8 @@ body {
     margin-top: 0.8rem;
     padding-top: 0.8rem;
     border-top: 1px solid var(--gray-light);
+    max-height: 250px;
+    overflow-y: auto;
 }
 
 .solution-title {
@@ -845,6 +714,7 @@ body {
     border-left: 2px solid var(--info);
 }
 
+/* MODAL FOOTER FIJO EN LA PARTE INFERIOR */
 .modal-footer {
     padding: 0.8rem 1rem;
     border-top: 1px solid var(--gray-light);
@@ -856,6 +726,7 @@ body {
     bottom: 0;
     z-index: 10;
     flex-shrink: 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .modal-btn {
@@ -1094,24 +965,42 @@ body {
     line-height: 1.4;
 }
 
+/* EXAM FOOTER - Botones fijos en examen */
 .exam-footer {
     background: white;
     padding: 0.8rem 1rem;
     border-top: 1px solid var(--gray-light);
     display: flex;
-    justify-content: space-between; /* Cambié de flex-direction: column */
+    flex-direction: column; /* Cambiado a columna */
     align-items: center;
     box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.1);
-    gap: 0.8rem; /* Mantiene el gap */
+    gap: 0.8rem;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
 }
 
 .exam-nav-buttons {
     display: flex;
     gap: 0.8rem;
-    width: 100%; /* Ocupa todo el ancho */
-    justify-content: space-between; /* Separa los botones */
+    width: 100%;
 }
 
+.nav-btn {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    background: var(--light);
+    border: 1px solid var(--gray-light);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 500;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
 
 .nav-btn:hover,
 .nav-btn:active {
@@ -1136,7 +1025,7 @@ body {
     box-shadow: 0 3px 8px rgba(37, 99, 235, 0.2);
 }
 
-/* ========== MODAL DE RESULTADOS ========== */
+/* ========== MODAL DE RESULTADOS DEL EXAMEN ========== */
 .exam-results-modal {
     position: fixed;
     top: 0;
@@ -1196,6 +1085,7 @@ body {
     padding: 1rem;
     flex: 1;
     overflow-y: auto;
+    max-height: calc(100vh - 200px); /* Espacio para footer */
 }
 
 .results-stats {
@@ -1262,6 +1152,7 @@ body {
     color: var(--danger);
 }
 
+/* RESULTS FOOTER FIJO */
 .results-footer {
     padding: 1rem;
     border-top: 1px solid var(--gray-light);
@@ -1269,6 +1160,11 @@ body {
     flex-direction: column;
     gap: 0.8rem;
     flex-shrink: 0;
+    background: white;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
 }
 
 /* ========== NOTIFICACIONES ========== */
@@ -1366,6 +1262,17 @@ body {
     .topics-grid {
         justify-content: flex-start;
     }
+    
+    /* Modal body más pequeño en móvil */
+    .modal-body {
+        max-height: calc(100vh - 120px);
+    }
+    
+    /* Exam body con scroll */
+    .exam-body {
+        max-height: calc(100vh - 140px);
+        overflow-y: auto;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1426,6 +1333,7 @@ body {
     .modal-btn {
         padding: 0.5rem 0.8rem;
         font-size: 0.8rem;
+        min-height: 36px;
     }
     
     .results-stats {
@@ -1440,6 +1348,11 @@ body {
     .stat-number {
         font-size: 1.3rem;
     }
+    
+    /* Ajustes para móvil muy pequeño */
+    .modal-body {
+        max-height: calc(100vh - 110px);
+    }
 }
 
 @media (min-width: 768px) {
@@ -1449,6 +1362,9 @@ body {
         margin: 1rem;
         height: auto;
         max-height: 90vh;
+        width: 90%;
+        max-width: 700px;
+        min-height: auto;
     }
     
     .modal-overlay,
@@ -1461,6 +1377,10 @@ body {
         left: auto;
         right: 1rem;
         max-width: 300px;
+    }
+    
+    .modal-body {
+        max-height: calc(90vh - 130px);
     }
 }
 
@@ -1496,6 +1416,9 @@ body {
     .progress-bar {
         min-width: 50px;
     }
+    
+    .modal-btn {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.6rem;
+    }
 }
-
-
