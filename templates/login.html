@@ -98,49 +98,6 @@
             box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
         }
         
-        .role-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .role-option {
-            text-align: center;
-            padding: 14px;
-            background: var(--bg-elevated);
-            border: 2px solid var(--border-color);
-            border-radius: var(--border-radius-sm);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .role-option:hover {
-            border-color: var(--primary);
-        }
-        
-        .role-option.selected {
-            background: rgba(16, 185, 129, 0.1);
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-        
-        .role-option i {
-            font-size: 1.5rem;
-            margin-bottom: 8px;
-        }
-        
-        .role-option .role-name {
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 4px;
-        }
-        
-        .role-option .role-desc {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        
         .login-btn {
             width: 100%;
             padding: 14px;
@@ -293,6 +250,22 @@
                 transform: translateY(0);
             }
         }
+        
+        /* Nuevos estilos para el aviso de solo alumnos */
+        .alumno-notice {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: var(--border-radius-sm);
+            color: #3b82f6;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        
+        .alumno-notice i {
+            margin-right: 6px;
+        }
     </style>
 </head>
 <body>
@@ -383,22 +356,9 @@
                                placeholder="••••••••" autocomplete="new-password">
                     </div>
                     
-                    <div class="form-group">
-                        <label>
-                            <i class="fas fa-user-tag"></i> Tipo de Usuario
-                        </label>
-                        <div class="role-selector">
-                            <div class="role-option" data-role="alumno" onclick="selectRole('alumno')">
-                                <i class="fas fa-user-graduate"></i>
-                                <div class="role-name">Alumno</div>
-                                <div class="role-desc">Estudiar preguntas</div>
-                            </div>
-                            <div class="role-option" data-role="maestro" onclick="selectRole('maestro')">
-                                <i class="fas fa-chalkboard-teacher"></i>
-                                <div class="role-name">Maestro</div>
-                                <div class="role-desc">Crear y editar preguntas</div>
-                            </div>
-                        </div>
+                    <!-- Aviso de solo alumnos (ELIMINADO EL SELECTOR DE ROL) -->
+                    <div class="alumno-notice">
+                        <i class="fas fa-user-graduate"></i> Esta plataforma está disponible solo para alumnos
                     </div>
                     
                     <button class="login-btn" id="registerBtn" onclick="register()">
@@ -453,22 +413,11 @@
     
     <!-- Scripts -->
     <script>
-        let selectedRole = 'alumno';
-        
-        // Seleccionar rol
-        function selectRole(role) {
-            selectedRole = role;
-            document.querySelectorAll('.role-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-            document.querySelector(`.role-option[data-role="${role}"]`).classList.add('selected');
-        }
-        
         // Cambiar a formulario de registro
         function showRegister() {
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('registerForm').style.display = 'block';
-            selectRole('alumno'); // Resetear a alumno por defecto
+            clearErrors();
         }
         
         // Cambiar a formulario de login
@@ -546,7 +495,7 @@
             }
         }
         
-        // Registro
+        // Registro (SIEMPRE como alumno)
         async function register() {
             const nombre = document.getElementById('registerNombre').value.trim();
             const apellido = document.getElementById('registerApellido').value.trim();
@@ -572,7 +521,7 @@
                         apellido,
                         email,
                         password,
-                        rol: selectedRole
+                        rol: 'alumno' // SIEMPRE se registra como alumno
                     })
                 });
                 
@@ -602,11 +551,6 @@
                     register();
                 }
             }
-        });
-        
-        // Inicializar con alumno seleccionado
-        document.addEventListener('DOMContentLoaded', function() {
-            selectRole('alumno');
         });
     </script>
 </body>
