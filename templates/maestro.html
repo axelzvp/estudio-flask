@@ -669,7 +669,8 @@
     </div>
 
 
-    <!-- Modal de Carga Masiva (VERSIÓN MEJORADA) -->
+        <!-- Modal de Carga Masiva (VERSIÓN MEJORADA) -->
+       <!-- Modal de Carga Masiva (VERSIÓN SIMPLIFICADA) -->
     <div class="modal-overlay" id="bulkModal" style="display: none;">
         <div class="modal" style="max-width: 800px;">
             <div class="modal-header">
@@ -681,96 +682,110 @@
             
             <div class="modal-body">
                 <!-- Selectores de materia y tema -->
-                <div class="form-group">
-                    <label><i class="fas fa-book"></i> Materia para todas las preguntas</label>
-                    <select class="form-control" id="bulkSubject">
-                        <option value="Matemáticas">Matemáticas</option>
-                        <option value="Física">Física</option>
-                        <option value="Química">Química</option>
-                        <option value="Biología">Biología</option>
-                        <option value="Historia">Historia</option>
-                        <option value="Geografía">Geografía</option>
-                        <option value="Literatura">Literatura</option>
-                        <option value="Inglés">Inglés</option>
-                        <option value="_new_">✏️ Otra materia...</option>
-                    </select>
+                <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label><i class="fas fa-book"></i> Materia</label>
+                        <select class="form-control" id="bulkSubject">
+                            <option value="Matemáticas">Matemáticas</option>
+                            <option value="Física">Física</option>
+                            <option value="Química">Química</option>
+                            <option value="Biología">Biología</option>
+                            <option value="Historia">Historia</option>
+                            <option value="Geografía">Geografía</option>
+                            <option value="Literatura">Literatura</option>
+                            <option value="Inglés">Inglés</option>
+                            <option value="_new_">✏️ Otra materia...</option>
+                        </select>
+                        
+                        <input type="text" class="form-control" id="bulkNewSubject" 
+                               placeholder="Escribe la nueva materia" style="margin-top: 8px; display: none;">
+                    </div>
                     
-                    <input type="text" class="form-control" id="bulkNewSubject" 
-                           placeholder="Escribe la nueva materia" style="margin-top: 8px; display: none;">
-                </div>
-                
-                <div class="form-group">
-                    <label><i class="fas fa-tag"></i> Tema para todas las preguntas</label>
-                    <input type="text" class="form-control" id="bulkTopic" 
-                           placeholder="Ej: Álgebra, Cálculo, Geometría, Trigonometría">
-                </div>
-                
-                <div class="form-group">
-                    <label><i class="fas fa-university"></i> Universidad</label>
-                    <select class="form-control" id="bulkUniversity">
-                        <option value="UNAM">UNAM</option>
-                        <option value="IPN">IPN</option>
-                        <option value="UAM">UAM</option>
-                        <option value="TEC">TEC</option>
-                        <option value="EXANI">EXANI</option>
-                        <option value="NAVAL">NAVAL</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label><i class="fas fa-info-circle"></i> Instrucciones</label>
-                    <div style="background: #f8f9ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                        <p style="margin-bottom: 10px; color: #333;">
-                            <strong>Formato de texto:</strong> Cada pregunta debe estar separada por una línea en blanco
-                        </p>
-                        <div style="background: white; padding: 15px; border: 1px dashed #ccc; border-radius: 5px; font-family: monospace; font-size: 0.9rem;">
-                            Calcula el área del triángulo con base 10 y altura 5<br>
-                            A) 25 cm²<br>
-                            B) 30 cm²<br>
-                            C) 35 cm²<br>
-                            D) 40 cm²<br>
-                            Respuesta: A<br>
-                            <br>
-                            Resuelve la ecuación: 2x + 5 = 15<br>
-                            A) x = 5<br>
-                            B) x = 6<br>
-                            C) x = 7<br>
-                            D) x = 8<br>
-                            Respuesta: A
-                        </div>
-                        <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">
-                            <i class="fas fa-lightbulb"></i> <strong>Nota:</strong> Todas las preguntas se guardarán con la materia y tema seleccionados arriba.
-                        </p>
+                    <div class="form-group" style="flex: 1;">
+                        <label><i class="fas fa-tag"></i> Tema</label>
+                        <input type="text" class="form-control" id="bulkTopic" 
+                               placeholder="Ej: Álgebra, Cálculo, Geometría">
+                    </div>
+                    
+                    <div class="form-group" style="flex: 1;">
+                        <label><i class="fas fa-university"></i> Universidad</label>
+                        <select class="form-control" id="bulkUniversity">
+                            <option value="UNAM">UNAM</option>
+                            <option value="IPN">IPN</option>
+                            <option value="UAM">UAM</option>
+                            <option value="TEC">TEC</option>
+                            <option value="EXANI">EXANI</option>
+                            <option value="NAVAL">NAVAL</option>
+                        </select>
                     </div>
                 </div>
                 
+                <!-- Área de texto principal -->
                 <div class="form-group">
-                    <label><i class="fas fa-paste"></i> Pega las preguntas</label>
+                    <label><i class="fas fa-paste"></i> Pega las preguntas aquí</label>
                     <textarea 
                         id="bulkText" 
-                        rows="12" 
-                        placeholder="Pega aquí el contenido del libro o documento..."
-                        style="width: 100%; font-family: monospace; font-size: 0.9rem;"
+                        rows="15" 
+                        placeholder="Pega aquí las preguntas en formato:
+Pregunta 1
+A) Opción A
+B) Opción B
+C) Opción C
+D) Opción D
+Respuesta: A
+
+Pregunta 2
+A) Opción A
+B) Opción B
+C) Opción C
+D) Opción D
+Respuesta: B"
+                        style="width: 100%; font-family: 'Courier New', monospace; font-size: 0.9rem; padding: 12px;"
                     ></textarea>
                     
-                    <div class="text-info" style="margin-top: 5px; font-size: 0.85rem;">
-                        <i class="fas fa-chart-bar"></i> 
-                        <span id="bulkStats">0 preguntas detectadas | 0 líneas</span>
+                    <div class="text-info" style="margin-top: 8px; font-size: 0.85rem; display: flex; justify-content: space-between;">
+                        <div>
+                            <i class="fas fa-chart-bar"></i> 
+                            <span id="bulkStats">0 preguntas detectadas | 0 líneas</span>
+                        </div>
+                        <button class="btn btn-outline btn-sm" onclick="ejemploFormato()" style="font-size: 0.8rem;">
+                            <i class="fas fa-question-circle"></i> Ver ejemplo
+                        </button>
                     </div>
                 </div>
                 
-                <!-- Vista previa (opcional) -->
+                <!-- Vista previa (MEJORADA) -->
                 <div class="preview-container" id="bulkPreview" style="display: none; margin-top: 20px;">
-                    <h5><i class="fas fa-search"></i> Vista previa (primera pregunta)</h5>
-                    <div id="bulkPreviewContent" style="background: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid #ddd;"></div>
+                    <h5 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-search"></i> Vista previa (primera pregunta)
+                    </h5>
+                    <div id="bulkPreviewContent" style="
+                        background: #f8f9fa; 
+                        padding: 15px; 
+                        border-radius: 8px; 
+                        border: 1px solid #dee2e6;
+                        font-family: 'Courier New', monospace;
+                        font-size: 0.9rem;
+                        white-space: pre-wrap;
+                        max-height: 200px;
+                        overflow-y: auto;
+                        color: #212529;
+                        line-height: 1.6;
+                    ">
+                    </div>
+                    <div style="margin-top: 8px; font-size: 0.8rem; color: #6c757d;">
+                        <i class="fas fa-info-circle"></i> Se procesará en el lote completo
+                    </div>
                 </div>
                 
-                <div class="progress-container" id="bulkProgressContainer" style="display: none;">
+                <!-- Barra de progreso -->
+                <div class="progress-container" id="bulkProgressContainer" style="display: none; margin-top: 20px;">
                     <div class="progress-bar" id="bulkProgressBar"></div>
                     <div class="progress-text" id="bulkProgressText">0%</div>
                 </div>
                 
-                <div class="result-container" id="bulkResultContainer" style="display: none;">
+                <!-- Resultados -->
+                <div class="result-container" id="bulkResultContainer" style="display: none; margin-top: 20px;">
                     <div id="bulkResultMessage"></div>
                 </div>
             </div>
@@ -784,12 +799,10 @@
                 </button>
             </div>
         </div>
-    </div>
 
 
 
-
-    
+</div>
     <!-- Modal para agregar/editar preguntas (MODAL MEJORADO) -->
     <div class="modal-overlay" id="questionModal">
         <div class="modal">
@@ -2467,32 +2480,60 @@
         // Contar líneas
         const lineas = texto.split('\n').length;
         
-        // Estimar preguntas (cada 6 líneas = 1 pregunta aprox)
-        const bloques = texto.trim().split('\n\n');
+        // Mejor detección de preguntas: buscar patrón de opciones múltiples
+        const lineasArray = texto.split('\n');
         let preguntasDetectadas = 0;
+        let encontroOpciones = false;
+        let opcionesContador = 0;
         
-        for (const bloque of bloques) {
-            const lineasBloque = bloque.split('\n').filter(l => l.trim()).length;
-            if (lineasBloque >= 6) { // Pregunta + 4 opciones + respuesta
-                preguntasDetectadas++;
+        for (let i = 0; i < lineasArray.length; i++) {
+            const linea = lineasArray[i].trim();
+            
+            // Detectar líneas con opciones A), B), C), D)
+            if (/^[A-D][).]\s+/.test(linea) || /^\([A-D]\)\s+/.test(linea)) {
+                opcionesContador++;
+                encontroOpciones = true;
+            }
+            
+            // Si hay una línea de respuesta, contar como pregunta completada
+            if (encontroOpciones && /^[Rr]espuesta:\s*[A-D]/i.test(linea)) {
+                if (opcionesContador >= 4) { // Al menos 4 opciones detectadas
+                    preguntasDetectadas++;
+                }
+                encontroOpciones = false;
+                opcionesContador = 0;
             }
         }
         
-        // Mostrar estadísticas
-        statsElement.textContent = `${preguntasDetectadas} preguntas detectadas | ${lineas} líneas`;
+        // También contar por bloques separados por líneas vacías
+        const bloques = texto.trim().split(/\n\s*\n/);
+        let preguntasPorBloques = 0;
         
-        // Mostrar vista previa de la primera pregunta
-        if (preguntasDetectadas > 0) {
-            const primerBloque = bloques[0];
-            previewElement.style.display = 'block';
-            document.getElementById('bulkPreviewContent').innerHTML = `
-                <div style="font-family: monospace; white-space: pre-wrap;">
-                    ${primerBloque}
-                </div>
-                <div style="margin-top: 10px; font-size: 0.85rem; color: #666;">
-                    <i class="fas fa-info-circle"></i> Esta es la primera pregunta que se procesará
-                </div>
-            `;
+        for (const bloque of bloques) {
+            const lineasBloque = bloque.split('\n').filter(l => l.trim()).length;
+            const tieneRespuesta = /[Rr]espuesta:\s*[A-D]/i.test(bloque);
+            const tieneOpciones = /^[A-D][).]\s+/im.test(bloque);
+            
+            if (lineasBloque >= 6 && tieneRespuesta && tieneOpciones) {
+                preguntasPorBloques++;
+            }
+        }
+        
+        // Usar el máximo entre ambos métodos
+        const finalPreguntas = Math.max(preguntasDetectadas, preguntasPorBloques);
+        
+        // Mostrar estadísticas
+        statsElement.textContent = `${finalPreguntas} preguntas detectadas | ${lineas} líneas`;
+        
+        // Mostrar vista previa de la primera pregunta válida
+        if (finalPreguntas > 0) {
+            for (const bloque of bloques) {
+                if (bloque.trim() && /[Rr]espuesta:\s*[A-D]/i.test(bloque)) {
+                    previewElement.style.display = 'block';
+                    document.getElementById('bulkPreviewContent').textContent = bloque.trim();
+                    break;
+                }
+            }
         } else {
             previewElement.style.display = 'none';
         }
@@ -2794,6 +2835,41 @@
             
             return resultados;
         }
+
+
+        function ejemploFormato() {
+            const ejemplo = `Calcula el área del triángulo con base 10 y altura 5
+        A) 25 cm²
+        B) 30 cm²
+        C) 35 cm²
+        D) 40 cm²
+        Respuesta: A
+        
+        Resuelve la ecuación: 2x + 5 = 15
+        A) x = 5
+        B) x = 6
+        C) x = 7
+        D) x = 8
+        Respuesta: A
+        
+        ¿Cuál es la capital de Francia?
+        A) Madrid
+        B) Roma
+        C) París
+        D) Berlín
+        Respuesta: C`;
+        
+            document.getElementById('bulkText').value = ejemplo;
+            actualizarEstadisticasBulk();
+            document.getElementById('bulkText').focus();
+            
+            showNotification('Ejemplo cargado. Puedes editarlo o añadir más preguntas', 'info');
+        }
+
+
+
+
+
 
     </script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
