@@ -1,4 +1,5 @@
 from functools import wraps
+import re
 from flask import Flask, redirect, request, jsonify, send_from_directory, render_template, session
 from flask_cors import CORS
 from pymongo import MongoClient
@@ -268,6 +269,159 @@ def create_question():
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+    
+@app.route('/api/bulk_questions', methods=['POST'])
+@maestro_required
+def bulk_questions():
+    """Procesa carga masiva de preguntas desde texto"""
+    try:
+        data = request.get_json()
+        texto = data.get('texto', '')
+        
+        # Obtener materia, tema y universidad del frontend
+        subject = data.get('subject', 'Matemáticas')
+        topic = data.get('topic', 'General')
+        university = data.get('university', 'UNAM')
+        
+        if not texto:
+            return jsonify({
+                'success': False,
+                'error': 'No se proporcionó texto para procesar'
+            }), 400
+        
+        if not topic or topic.strip() == '':
+            return jsonify({
+                'success': False,
+                'error': 'El tema es requerido'
+            }), 400
+        
+        # Separar en bloques (cada pregunta separada por línea en blanco)
+        bloques = texto.strip().split('\n\n')
+        preguntas_insertadas = []
+        
+        for bloque in bloques:
+            lineas = [l.strip() for l in bloque.split('\n') if l.strip()]
+            
+            # Necesitamos al menos 6 líneas: pregunta + 4 opciones + respuesta
+            if len(lineas) < 6:
+                continue
+            
+            # La primera línea es la pregunta
+            pregunta = lineas[0]
+            
+            # Extraer opciones (A, B, C, D)
+            opciones = []
+            opcion_correcta = -1
+            
+            # Buscar opciones en cualquier orden
+            for i, linea in enumerate(lineas[1:]):
+                linea_lower = linea.lower()
+                
+                # Buscar patrón A) o A.
+                if re.match(r'^a[\)\.]\s*', linea_lower):
+                    opcion_texto = linea[2:].strip()
+                    opciones.append(opcion_texto)
+                elif re.match(r'^b[\)\.]\s*', linea_lower):
+                    opcion_texto = linea[2:].strip()
+                    opciones.append(opcion_texto)
+                elif re.match(r'^c[\)\.]\s*', linea_lower):
+                    opcion_texto = linea[2:].strip()
+                    opciones.append(opcion_texto)
+                elif re.match(r'^d[\)\.]\s*', linea_lower):
+                    opcion_texto = linea[2:].strip()
+                    opciones.append(opcion_texto)
+            
+            # Asegurar que tenemos exactamente 4 opciones
+            if len(opciones) != 4:
+                # Intentar otro formato: puede que las opciones estén en líneas separadas
+                opciones = []
+                for linea in lineas[1:5]:  # Las primeras 4 líneas después de la pregunta
+                    if linea.strip():
+                        opciones.append(linea.strip())
+            
+            # Si aún no tenemos 4 opciones, saltar esta pregunta
+            if len(opciones) != 4:
+                continue
+            
+            # Buscar respuesta correcta
+            for linea in lineas:
+                linea_lower = linea.lower()
+                
+                # Buscar "respuesta: A" o "correcta: B"
+                if 'respuesta:' in linea_lower or 'correcta:' in linea_lower:
+                    # Extraer la letra de la respuesta
+                    match = re.search(r'[AaBbCcDd]', linea_lower.split(':')[-1])
+                    if match:
+                        letra = match.group().upper()
+                        if letra == 'A':
+                            opcion_correcta = 0
+                        elif letra == 'B':
+                            opcion_correcta = 1
+                        elif letra == 'C':
+                            opcion_correcta = 2
+                        elif letra == 'D':
+                            opcion_correcta = 3
+                    break
+            
+            # Si no se encontró respuesta, usar la primera como default
+            if opcion_correcta == -1:
+                opcion_correcta = 0
+            
+            # Crear documento de pregunta con los valores del frontend
+            pregunta_doc = {
+                'subject': subject,
+                'topic': topic,
+                'question': pregunta,
+                'has_options': True,
+                'options': opciones,
+                'correct_option': opcion_correcta,
+                'correct_answer': f"{chr(65 + opcion_correcta)}. {opciones[opcion_correcta]}",
+                'answer': opciones[opcion_correcta],
+                'solution': '',
+                'university': university,
+                'created_at': datetime.utcnow(),
+                'times_shown': 0,
+                'times_correct': 0,
+                'source': 'carga_masiva'
+            }
+            
+            preguntas_insertadas.append(pregunta_doc)
+        
+        # Insertar todas las preguntas en batch
+        if preguntas_insertadas:
+            result = questions_collection.insert_many(preguntas_insertadas)
+            
+            return jsonify({
+                'success': True,
+                'message': f'Se insertaron {len(preguntas_insertadas)} preguntas',
+                'inserted_count': len(preguntas_insertadas),
+                'inserted_ids': [str(id) for id in result.inserted_ids],
+                'subject': subject,
+                'topic': topic,
+                'university': university
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'No se pudieron procesar preguntas del texto proporcionado',
+                'suggestions': [
+                    'Formato sugerido:',
+                    'Pregunta (primera línea)',
+                    'A) Opción A',
+                    'B) Opción B',
+                    'C) Opción C',
+                    'D) Opción D',
+                    'Respuesta: A (última línea)',
+                    '',
+                    'Cada pregunta debe estar separada por una línea en blanco'
+                ]
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Error procesando carga masiva: {str(e)}'
+        }), 500
 
 @app.route('/api/questions/<question_id>', methods=['PUT'])
 @maestro_required

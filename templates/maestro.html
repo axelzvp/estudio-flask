@@ -238,6 +238,64 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        /* Estilos para carga masiva */
+        .progress-container {
+            margin-top: 20px;
+            position: relative;
+            height: 30px;
+            background: var(--bg-elevated);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 15px;
+        }
+        
+        .progress-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .result-container {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-color);
+        }
+        
+        .result-success {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+            color: var(--success);
+        }
+        
+        .result-error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+        }
+        
+        .result-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: var(--accent);
+        }
     </style>
 </head>
 <body>
@@ -335,6 +393,11 @@
                     <button class="btn btn-primary" id="openModalFromListBtn">
                         <i class="fas fa-plus"></i>
                         Nueva Pregunta
+                    </button>
+                    <!-- En el page-header de la página de preguntas, añade esto junto a los otros botones -->
+                    <button class="btn btn-success" onclick="openBulkModal()" style="margin-left: 10px;">
+                        <i class="fas fa-file-import"></i>
+                        Carga Masiva
                     </button>
                 </div>
             </div>
@@ -604,6 +667,128 @@
         </div>
       </div>
     </div>
+
+
+    <!-- Modal de Carga Masiva (VERSIÓN MEJORADA) -->
+    <div class="modal-overlay" id="bulkModal" style="display: none;">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-file-import"></i> Carga Masiva de Preguntas
+                </h3>
+                <button class="modal-close" onclick="closeBulkModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Selectores de materia y tema -->
+                <div class="form-group">
+                    <label><i class="fas fa-book"></i> Materia para todas las preguntas</label>
+                    <select class="form-control" id="bulkSubject">
+                        <option value="Matemáticas">Matemáticas</option>
+                        <option value="Física">Física</option>
+                        <option value="Química">Química</option>
+                        <option value="Biología">Biología</option>
+                        <option value="Historia">Historia</option>
+                        <option value="Geografía">Geografía</option>
+                        <option value="Literatura">Literatura</option>
+                        <option value="Inglés">Inglés</option>
+                        <option value="_new_">✏️ Otra materia...</option>
+                    </select>
+                    
+                    <input type="text" class="form-control" id="bulkNewSubject" 
+                           placeholder="Escribe la nueva materia" style="margin-top: 8px; display: none;">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Tema para todas las preguntas</label>
+                    <input type="text" class="form-control" id="bulkTopic" 
+                           placeholder="Ej: Álgebra, Cálculo, Geometría, Trigonometría">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-university"></i> Universidad</label>
+                    <select class="form-control" id="bulkUniversity">
+                        <option value="UNAM">UNAM</option>
+                        <option value="IPN">IPN</option>
+                        <option value="UAM">UAM</option>
+                        <option value="TEC">TEC</option>
+                        <option value="EXANI">EXANI</option>
+                        <option value="NAVAL">NAVAL</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-info-circle"></i> Instrucciones</label>
+                    <div style="background: #f8f9ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <p style="margin-bottom: 10px; color: #333;">
+                            <strong>Formato de texto:</strong> Cada pregunta debe estar separada por una línea en blanco
+                        </p>
+                        <div style="background: white; padding: 15px; border: 1px dashed #ccc; border-radius: 5px; font-family: monospace; font-size: 0.9rem;">
+                            Calcula el área del triángulo con base 10 y altura 5<br>
+                            A) 25 cm²<br>
+                            B) 30 cm²<br>
+                            C) 35 cm²<br>
+                            D) 40 cm²<br>
+                            Respuesta: A<br>
+                            <br>
+                            Resuelve la ecuación: 2x + 5 = 15<br>
+                            A) x = 5<br>
+                            B) x = 6<br>
+                            C) x = 7<br>
+                            D) x = 8<br>
+                            Respuesta: A
+                        </div>
+                        <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">
+                            <i class="fas fa-lightbulb"></i> <strong>Nota:</strong> Todas las preguntas se guardarán con la materia y tema seleccionados arriba.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-paste"></i> Pega las preguntas</label>
+                    <textarea 
+                        id="bulkText" 
+                        rows="12" 
+                        placeholder="Pega aquí el contenido del libro o documento..."
+                        style="width: 100%; font-family: monospace; font-size: 0.9rem;"
+                    ></textarea>
+                    
+                    <div class="text-info" style="margin-top: 5px; font-size: 0.85rem;">
+                        <i class="fas fa-chart-bar"></i> 
+                        <span id="bulkStats">0 preguntas detectadas | 0 líneas</span>
+                    </div>
+                </div>
+                
+                <!-- Vista previa (opcional) -->
+                <div class="preview-container" id="bulkPreview" style="display: none; margin-top: 20px;">
+                    <h5><i class="fas fa-search"></i> Vista previa (primera pregunta)</h5>
+                    <div id="bulkPreviewContent" style="background: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid #ddd;"></div>
+                </div>
+                
+                <div class="progress-container" id="bulkProgressContainer" style="display: none;">
+                    <div class="progress-bar" id="bulkProgressBar"></div>
+                    <div class="progress-text" id="bulkProgressText">0%</div>
+                </div>
+                
+                <div class="result-container" id="bulkResultContainer" style="display: none;">
+                    <div id="bulkResultMessage"></div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBulkModal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-primary" onclick="procesarCargaMasiva()" id="processBulkBtn">
+                    <i class="fas fa-play"></i> Procesar Preguntas
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+
+
     
     <!-- Modal para agregar/editar preguntas (MODAL MEJORADO) -->
     <div class="modal-overlay" id="questionModal">
@@ -2224,8 +2409,392 @@
                 }
             } catch (error) {
                 console.error('Logout error:', error);
+         }
+     }
+        
+        
+        
+        
+         // Funciones para carga masiva (VERSIÓN MEJORADA)
+    function openBulkModal() {
+        document.getElementById('bulkModal').style.display = 'flex';
+        document.getElementById('bulkText').value = '';
+        document.getElementById('bulkProgressContainer').style.display = 'none';
+        document.getElementById('bulkResultContainer').style.display = 'none';
+        document.getElementById('bulkPreview').style.display = 'none';
+        
+        // Resetear valores
+        document.getElementById('bulkSubject').value = 'Matemáticas';
+        document.getElementById('bulkNewSubject').style.display = 'none';
+        document.getElementById('bulkNewSubject').value = '';
+        document.getElementById('bulkTopic').value = '';
+        document.getElementById('bulkUniversity').value = 'UNAM';
+        
+        // Inicializar evento para materia personalizada
+        document.getElementById('bulkSubject').addEventListener('change', function() {
+            const newSubjectInput = document.getElementById('bulkNewSubject');
+            if (this.value === '_new_') {
+                newSubjectInput.style.display = 'block';
+                newSubjectInput.focus();
+            } else {
+                newSubjectInput.style.display = 'none';
+            }
+        });
+        
+        // Evento para análisis en tiempo real
+        document.getElementById('bulkText').addEventListener('input', function() {
+            actualizarEstadisticasBulk();
+        });
+        
+        document.getElementById('bulkText').focus();
+    }
+    
+    function closeBulkModal() {
+        document.getElementById('bulkModal').style.display = 'none';
+    }
+    
+    function actualizarEstadisticasBulk() {
+        const texto = document.getElementById('bulkText').value.trim();
+        const statsElement = document.getElementById('bulkStats');
+        const previewElement = document.getElementById('bulkPreview');
+        
+        if (!texto) {
+            statsElement.textContent = '0 preguntas detectadas | 0 líneas';
+            previewElement.style.display = 'none';
+            return;
+        }
+        
+        // Contar líneas
+        const lineas = texto.split('\n').length;
+        
+        // Estimar preguntas (cada 6 líneas = 1 pregunta aprox)
+        const bloques = texto.trim().split('\n\n');
+        let preguntasDetectadas = 0;
+        
+        for (const bloque of bloques) {
+            const lineasBloque = bloque.split('\n').filter(l => l.trim()).length;
+            if (lineasBloque >= 6) { // Pregunta + 4 opciones + respuesta
+                preguntasDetectadas++;
             }
         }
+        
+        // Mostrar estadísticas
+        statsElement.textContent = `${preguntasDetectadas} preguntas detectadas | ${lineas} líneas`;
+        
+        // Mostrar vista previa de la primera pregunta
+        if (preguntasDetectadas > 0) {
+            const primerBloque = bloques[0];
+            previewElement.style.display = 'block';
+            document.getElementById('bulkPreviewContent').innerHTML = `
+                <div style="font-family: monospace; white-space: pre-wrap;">
+                    ${primerBloque}
+                </div>
+                <div style="margin-top: 10px; font-size: 0.85rem; color: #666;">
+                    <i class="fas fa-info-circle"></i> Esta es la primera pregunta que se procesará
+                </div>
+            `;
+        } else {
+            previewElement.style.display = 'none';
+        }
+    }
+    
+    async function procesarCargaMasiva() {
+        const texto = document.getElementById('bulkText').value.trim();
+        
+        if (!texto) {
+            showNotification('Por favor pega las preguntas primero', 'warning');
+            return;
+        }
+        
+        // Obtener valores de los selectores
+        let subject = document.getElementById('bulkSubject').value;
+        const newSubject = document.getElementById('bulkNewSubject').value.trim();
+        const finalSubject = (subject === '_new_' && newSubject) ? newSubject : subject;
+        
+        const topic = document.getElementById('bulkTopic').value.trim();
+        const university = document.getElementById('bulkUniversity').value;
+        
+        // Validaciones
+        if (!finalSubject) {
+            showNotification('Por favor selecciona o escribe una materia', 'warning');
+            return;
+        }
+        
+        if (!topic) {
+            showNotification('Por favor escribe el tema para las preguntas', 'warning');
+            return;
+        }
+        
+        const processBtn = document.getElementById('processBulkBtn');
+        const originalText = processBtn.innerHTML;
+        
+        // Mostrar progreso
+        document.getElementById('bulkProgressContainer').style.display = 'block';
+        document.getElementById('bulkResultContainer').style.display = 'none';
+        
+        processBtn.innerHTML = '<i class="fas fa-spinner loading"></i> Procesando...';
+        processBtn.disabled = true;
+        
+        try {
+            updateProgress(10, 'Analizando texto...');
+            
+            const response = await fetch('/api/bulk_questions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    texto: texto,
+                    subject: finalSubject,
+                    topic: topic,
+                    university: university
+                })
+            });
+            
+            updateProgress(50, 'Enviando datos al servidor...');
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                updateProgress(100, '¡Completado!');
+                
+                // Mostrar resultados
+                const resultContainer = document.getElementById('bulkResultContainer');
+                resultContainer.style.display = 'block';
+                resultContainer.className = 'result-container result-success';
+                
+                resultContainer.innerHTML = `
+                    <div style="text-align: center;">
+                        <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <h4>¡Carga completada exitosamente!</h4>
+                        
+                        <div style="margin: 15px 0; text-align: left; background: rgba(255,255,255,0.5); padding: 10px; border-radius: 5px;">
+                            <div><strong>Materia:</strong> ${finalSubject}</div>
+                            <div><strong>Tema:</strong> ${topic}</div>
+                            <div><strong>Universidad:</strong> ${university}</div>
+                            <div><strong>Preguntas insertadas:</strong> ${data.inserted_count}</div>
+                        </div>
+                        
+                        <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">
+                            <i class="fas fa-sync-alt"></i> Las preguntas se añadieron a la base de datos
+                        </p>
+                        
+                        <div style="margin-top: 15px;">
+                            <button class="btn btn-outline btn-sm" onclick="verPreguntasInsertadas(${data.inserted_count})">
+                                <i class="fas fa-eye"></i> Ver preguntas
+                            </button>
+                            <button class="btn btn-primary btn-sm" onclick="cargarMasPreguntas()" style="margin-left: 10px;">
+                                <i class="fas fa-plus"></i> Cargar más
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // Limpiar solo el texto, mantener materia y tema por si quieren añadir más
+                document.getElementById('bulkText').value = '';
+                
+                showNotification(`✅ Se insertaron ${data.inserted_count} preguntas en ${finalSubject} - ${topic}`, 'success');
+                
+                // Recargar datos después de 2 segundos
+                setTimeout(() => {
+                    loadAllData();
+                }, 2000);
+                
+            } else {
+                updateProgress(100, 'Error');
+                
+                const resultContainer = document.getElementById('bulkResultContainer');
+                resultContainer.style.display = 'block';
+                resultContainer.className = 'result-container result-error';
+                
+                resultContainer.innerHTML = `
+                    <div style="text-align: center;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <h4>Error en la carga</h4>
+                        <p>${data.error || 'Error desconocido'}</p>
+                        
+                        ${data.suggestions ? `
+                            <div style="margin-top: 15px; text-align: left; font-size: 0.9rem;">
+                                <strong>Sugerencias para corregir:</strong>
+                                <ul style="margin: 10px 0 0 20px;">
+                                    ${data.suggestions.map(s => `<li>${s}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                        
+                        <div style="margin-top: 20px;">
+                            <button class="btn btn-outline btn-sm" onclick="document.getElementById('bulkText').focus()">
+                                <i class="fas fa-edit"></i> Corregir texto
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                showNotification(`❌ ${data.error}`, 'error');
+            }
+            
+        } catch (error) {
+            console.error('Error en carga masiva:', error);
+            
+            const resultContainer = document.getElementById('bulkResultContainer');
+            resultContainer.style.display = 'block';
+            resultContainer.className = 'result-container result-error';
+            resultContainer.innerHTML = `
+                <div style="text-align: center;">
+                    <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <h4>Error de conexión</h4>
+                    <p>No se pudo conectar con el servidor: ${error.message}</p>
+                    <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">
+                        Verifica tu conexión a internet e intenta de nuevo.
+                    </p>
+                </div>
+            `;
+            
+            showNotification('❌ Error de conexión con el servidor', 'error');
+            
+        } finally {
+            processBtn.innerHTML = originalText;
+            processBtn.disabled = false;
+        }
+    }
+    
+    function verPreguntasInsertadas(cantidad) {
+        // Cierra el modal y va a la página de preguntas
+        closeBulkModal();
+        
+        // Activa la pestaña de preguntas
+        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        
+        document.querySelector('.menu-item[data-page="questions"]').classList.add('active');
+        document.getElementById('questionsPage').classList.add('active');
+        
+        // Muestra un mensaje
+        showNotification(`Verifica las ${cantidad} preguntas recién añadidas`, 'info');
+    }
+    
+    function cargarMasPreguntas() {
+        // Limpia solo el área de texto, mantiene los demás valores
+        document.getElementById('bulkText').value = '';
+        document.getElementById('bulkResultContainer').style.display = 'none';
+        document.getElementById('bulkProgressContainer').style.display = 'none';
+        document.getElementById('bulkText').focus();
+        
+        showNotification('Puedes pegar más preguntas', 'info');
+    }
+
+
+
+
+
+    // Función para actualizar la barra de progreso (agregar después de la función openBulkModal)
+    function updateProgress(porcentaje, mensaje) {
+        const progressBar = document.getElementById('bulkProgressBar');
+        const progressText = document.getElementById('bulkProgressText');
+        
+        if (progressBar && progressText) {
+            progressBar.style.width = porcentaje + '%';
+            progressText.textContent = mensaje + ' ' + porcentaje + '%';
+            
+            // Cambiar color según el progreso
+            if (porcentaje < 30) {
+                progressBar.style.background = 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)';
+            } else if (porcentaje < 70) {
+                progressBar.style.background = 'linear-gradient(90deg, #f59e0b 0%, #eab308 100%)';
+            } else {
+                progressBar.style.background = 'linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%)';
+            }
+        }
+    }
+
+    function verPreguntasInsertadas(cantidad) {
+        closeBulkModal();
+        
+        // Activar la pestaña de preguntas
+        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        
+        const questionsMenuItem = document.querySelector('.menu-item[data-page="questions"]');
+        if (questionsMenuItem) {
+            questionsMenuItem.classList.add('active');
+        }
+        document.getElementById('questionsPage').classList.add('active');
+        
+        showNotification(`Verifica las ${cantidad} preguntas recién añadidas`, 'info');
+    }
+
+
+    function closeBulkModal() {
+    document.getElementById('bulkModal').style.display = 'none';
+}
+
+    // AGREGAR ESTAS FUNCIONES AQUÍ:
+    function updateProgress(porcentaje, mensaje) {
+        const progressBar = document.getElementById('bulkProgressBar');
+        const progressText = document.getElementById('bulkProgressText');
+        
+        if (progressBar && progressText) {
+            progressBar.style.width = porcentaje + '%';
+            progressText.textContent = mensaje + ' ' + porcentaje + '%';
+            
+            // Cambiar color según el progreso
+            if (porcentaje < 30) {
+                progressBar.style.background = 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)';
+            } else if (porcentaje < 70) {
+                progressBar.style.background = 'linear-gradient(90deg, #f59e0b 0%, #eab308 100%)';
+            } else {
+                progressBar.style.background = 'linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%)';
+            }
+        }
+    }
+    
+    function verPreguntasInsertadas(cantidad) {
+        closeBulkModal();
+        
+        // Activar la pestaña de preguntas
+        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        
+        const questionsMenuItem = document.querySelector('.menu-item[data-page="questions"]');
+        if (questionsMenuItem) {
+            questionsMenuItem.classList.add('active');
+        }
+        document.getElementById('questionsPage').classList.add('active');
+        
+        showNotification(`Verifica las ${cantidad} preguntas recién añadidas`, 'info');
+    }
+    
+    
+
+
+        function analizarFormatoTexto(texto) {
+            const formatos = {
+                formato1: /(.*?)\nA[\).]\s*(.*?)\nB[\).]\s*(.*?)\nC[\).]\s*(.*?)\nD[\).]\s*(.*?)\n.*?[Rr]espuesta:\s*([A-D])/gi,
+                formato2: /(\d+\.\s.*?)\n\(A\)\s*(.*?)\n\(B\)\s*(.*?)\n\(C\)\s*(.*?)\n\(D\)\s*(.*?)\n.*?[Cc]orrecta:\s*([A-D])/gi,
+                formato3: /(PREGUNTA\s*\d+[\.:]\s*.*?)\nA\.\s*(.*?)\nB\.\s*(.*?)\nC\.\s*(.*?)\nD\.\s*(.*?)\n.*?SOLUCIÓN:\s*([A-D])/gi
+            };
+            
+            const resultados = {
+                formato: null,
+                preguntas: []
+            };
+            
+            for (const [formatoName, regex] of Object.entries(formatos)) {
+                const matches = [...texto.matchAll(regex)];
+                if (matches.length > 0) {
+                    resultados.formato = formatoName;
+                    resultados.preguntas = matches.map(match => ({
+                        pregunta: match[1],
+                        opciones: [match[2], match[3], match[4], match[5]],
+                        respuesta: match[6]
+                    }));
+                    break;
+                }
+            }
+            
+            return resultados;
+        }
+
     </script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 
