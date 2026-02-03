@@ -385,7 +385,7 @@ body {
 
 .btn-outline:hover {
   background: var(--primary);
-  color: white;
+  color: rgb(255, 255, 255);
 }
 
 .btn-sm {
@@ -491,10 +491,11 @@ body {
   line-height: 1.6;
   color: var(--text-primary);
   margin-bottom: 15px;
-  max-height: 100px;
-  overflow: hidden;
   position: relative;
+  white-space: pre-line;
+
 }
+
 
 .question-content.expanded {
   max-height: none;
@@ -953,7 +954,7 @@ body {
 
 .option-card.correct .option-letter-circle {
   background: var(--success);
-  color: white;
+  color: rgb(19, 64, 126);
   border-color: var(--success);
 }
 
@@ -1061,7 +1062,7 @@ body {
 .show-answer-btn {
   padding: 12px 24px;
   background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%);
-  color: white;
+  color: rgb(105, 3, 3);
   border: none;
   border-radius: var(--border-radius-sm);
   cursor: pointer;
@@ -1395,7 +1396,7 @@ textarea.form-control {
 
 .progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
   width: 0%;
   transition: width 0.3s ease;
   border-radius: 15px;
@@ -1441,59 +1442,189 @@ textarea.form-control {
   color: var(--accent);
 }
 
-/* ========== IMÁGENES ========== */
+/* ========== IMÁGENES EN PREGUNTAS - MEJORADO ========== */
 #imagePreviewContainer {
   transition: all 0.3s ease;
+  margin-top: 15px;
 }
 
 #previewImage {
   object-fit: contain;
-}
-
-.question-image-preview {
-  text-align: center;
-  background: #f8f9fa;
+  max-height: 200px;
+  width: auto;
   border-radius: 8px;
-  padding: 10px;
-  margin: 10px 0;
+  border: 1px solid var(--border-color);
 }
 
-.question-image-preview img {
+.question-image-container {
+  text-align: center;
+  margin: 15px 0;
+  padding: 15px;
+  background: var(--bg-elevated);
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.question-image {
+  max-width: 100%;
+  max-height: 300px;
+  min-height: 100px;
+  height: auto;
+  width: auto;
+  border-radius: 8px;
+  border: 2px solid var(--border-light);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
+  display: block;
+  margin: 10px auto;
+  object-fit: contain;
+  background: var(--bg-input);
+  padding: 5px;
 }
 
-.question-image-preview img:hover {
+.question-image:hover {
   transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  border-color: var(--primary);
 }
 
-/* Modal para imagen ampliada */
-.image-modal {
+.image-caption {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--bg-card);
+  border-radius: 4px;
+  width: 100%;
+}
+
+.image-error {
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+  text-align: center;
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin: 8px 0;
   display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.image-error i {
+  font-size: 1.2rem;
+  opacity: 0.8;
+}
+
+/* Imágenes en opciones */
+.option-content img,
+.option-text img,
+.exam-option-content img {
+  max-width: 90%;
+  max-height: 150px;
+  height: auto;
+  margin: 8px auto;
+  display: block;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  object-fit: contain;
+  background: var(--bg-input);
+  padding: 4px;
+}
+
+/* Imágenes en contenido */
+.question-content img,
+.exam-question-content img,
+.answer-content img,
+.solution-content img,
+.modal-body img {
+  max-width: 100%;
+  max-height: 350px;
+  height: auto;
+  border-radius: 8px;
+  margin: 12px 0;
+  display: block;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  object-fit: contain;
+  background: var(--bg-input);
+  padding: 4px;
+}
+
+/* Modal de imagen expandida */
+.image-expand-modal {
   position: fixed;
   top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease;
+  padding: 20px;
+}
+
+.image-expand-overlay {
+  position: relative;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.9);
-  z-index: 1000;
-  justify-content: center;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
 
-.image-modal img {
-  max-width: 90%;
-  max-height: 90%;
-  border-radius: 5px;
+.expanded-image {
+  max-width: 95%;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: zoomIn 0.3s ease;
 }
 
-.image-modal .close {
-  position: absolute;
+@keyframes zoomIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.close-expanded-btn {
+  position: fixed;
   top: 20px;
-  right: 30px;
-  color: white;
-  font-size: 30px;
+  right: 20px;
+  background: rgba(255,255,255,0.9);
+  border: none;
+  font-size: 2rem;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2d3748;
+  transition: all 0.2s ease;
+  z-index: 10000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.close-expanded-btn:hover {
+  background: white;
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
 }
 
 /* ========== STUDY MODAL ========== */
@@ -1504,6 +1635,8 @@ textarea.form-control {
 .study-modal .question-content {
   font-size: 1.1rem;
   margin-bottom: 16px;
+  white-space: pre-line;
+
 }
 
 /* ========== RESPONSIVE ========== */
@@ -1523,6 +1656,13 @@ textarea.form-control {
   }
   .questions-grid {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+  .question-image {
+    max-height: 250px;
+  }
+  .question-content img,
+  .exam-question-content img {
+    max-height: 250px;
   }
 }
 
@@ -1564,6 +1704,17 @@ textarea.form-control {
     gap: 15px;
     align-items: flex-start;
   }
+  .question-image {
+    max-height: 200px;
+  }
+  .question-content img,
+  .exam-question-content img {
+    max-height: 200px;
+  }
+  .option-content img,
+  .option-text img {
+    max-height: 120px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1577,4 +1728,229 @@ textarea.form-control {
     max-width: 95%;
     margin: 10px;
   }
+  .question-image {
+    max-height: 180px;
+  }
+  .question-content img,
+  .exam-question-content img {
+    max-height: 180px;
+  }
+  .option-content img,
+  .option-text img {
+    max-height: 100px;
+  }
+  .expanded-image {
+    max-height: 70vh;
+  }
+}
+
+/* Estilos para imágenes en maestro */
+.question-image-container {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.question-image {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.question-image:hover {
+    transform: scale(1.02);
+}
+
+.question-image-preview {
+    margin: 10px 0;
+    text-align: center;
+}
+
+.preview-image {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.preview-image:hover {
+    transform: scale(1.05);
+}
+
+.image-caption {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 5px;
+    text-align: center;
+}
+
+.img-error {
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: center;
+    color: #c00;
+    font-size: 0.9rem;
+    margin-top: 10px;
+}
+
+.img-error i {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* Modal para imagen expandida */
+.image-expand-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-expand-overlay {
+    position: relative;
+    width: 90%;
+    height: 90%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.expanded-image {
+    max-width: 95%;
+    max-height: 95%;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.close-expanded-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    transition: background 0.3s ease;
+}
+
+.close-expanded-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Estilos para imágenes - COPIAR DE index.css si es necesario */
+.question-image-container {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.question-image {
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.question-image:hover {
+    transform: scale(1.02);
+}
+
+.preview-image {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid #ddd;
+}
+
+.image-expand-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-expand-overlay {
+    width: 90%;
+    height: 90%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.expanded-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.close-expanded-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+    z-index: 10000;
+}
+
+.option-card {
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin: 8px 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.option-card:hover {
+    background-color: #1e663c;
+}
+
+.option-letter {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #3b82f6;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.option-text {
+    flex: 1;
 }

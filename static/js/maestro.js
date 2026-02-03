@@ -487,17 +487,18 @@ function createQuestionCard(question) {
     
     const isLong = question.question.length > 200;
     
-    // Crear HTML para imagen si existe
+    // Crear HTML para imagen si existe - FORMATO UNIFICADO
     let imageHTML = '';
     if (question.image && question.image.trim() !== '') {
         const imageUrl = `/static/img/${question.image}`;
         imageHTML = `
-            <div class="question-image-preview" style="margin: 10px 0;">
+            <div class="question-image-preview" style="margin: 10px 0; text-align: center;">
                 <img src="${imageUrl}" 
                      alt="Imagen de la pregunta" 
-                     style="max-width: 100%; max-height: 150px; border-radius: 5px; border: 1px solid #ddd; cursor: pointer;"
-                     onclick="expandImage('${imageUrl}')">
-                <div style="font-size: 0.8rem; color: #666; margin-top: 5px; text-align: center;">
+                     class="preview-image"
+                     onclick="expandQuestionImage('${imageUrl}')"
+                     style="max-width: 100%; max-height: 150px; border-radius: 6px; cursor: pointer; border: 1px solid #ddd;">
+                <div class="image-caption" style="font-size: 0.8rem; color: #666; margin-top: 5px;">
                     <i class="fas fa-image"></i> Contiene imagen
                 </div>
             </div>
@@ -547,6 +548,10 @@ function createQuestionCard(question) {
     
     return card;
 }
+
+
+// Agregar esta función en la sección de funciones auxiliares
+
         
         function toggleQuestionText(element) {
             const content = element.closest('.question-content');
@@ -930,59 +935,81 @@ function createQuestionCard(question) {
             }
         }
         
-        function displayStudyQuestion(question) {
-            document.getElementById('modalQuestionSubject').textContent = question.subject;
-            document.getElementById('modalQuestionTopic').textContent = question.topic;
-            document.getElementById('modalQuestionUniversity').textContent = question.university;
-            document.getElementById('modalQuestionText').innerHTML = question.question;
-            // Crear contenido de pregunta con imagen si existe
-            let questionHTML = question.question;
-            
-            if (question.image) {
-                questionHTML += `
-                    <div style="margin: 15px 0; text-align: center;">
-                        <img src="/static/img/${question.image}" 
-                             alt="Imagen del ejercicio" 
-                             style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                        <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
-                            <i class="fas fa-image"></i> Imagen del ejercicio
-                        </div>
-                    </div>
-                `;
-            }
-            
-            document.getElementById('modalQuestionText').innerHTML = questionHTML;
-            
-            const optionsContainer = document.getElementById('modalOptionsContainer');
-            optionsContainer.innerHTML = '';
-            
-            if (question.has_options && question.options && question.options.length > 0) {
-                let optionsHTML = '';
-                
-                question.options.forEach((option, index) => {
-                    const letter = String.fromCharCode(65 + index);
-                    optionsHTML += `
-                        <div class="option-card" onclick="checkAnswer(${index}, '${question._id}')" data-index="${index}">
-                            <div class="option-letter-circle">${letter}</div>
-                            <div class="option-content">${option}</div>
-                        </div>
-                    `;
-                });
-                
-                optionsContainer.innerHTML = optionsHTML;
-            }
-            
-            document.getElementById('modalAnswerText').innerHTML = question.answer || question.correct_answer || '';
-            document.getElementById('modalSolutionText').innerHTML = question.solution || '';
-            document.getElementById('modalAnswerSection').style.display = 'none';
-            
-            document.getElementById('studyQuestionModal').style.display = 'flex';
-            
-            if (window.MathJax) {
-                MathJax.typesetPromise()
-                    .catch(err => console.log('MathJax error:', err));
-            }
+function displayStudyQuestion(question) {
+    // Actualizar badges
+    document.getElementById('modalQuestionSubject').textContent = question.subject;
+    document.getElementById('modalQuestionTopic').textContent = question.topic;
+    document.getElementById('modalQuestionUniversity').textContent = question.university || 'General';
+    
+    // Crear contenido de pregunta
+    let questionHTML = question.question;
+    
+    // Añadir imagen si existe (USANDO EL MISMO FORMATO QUE index.js)
+    if (question.image && question.image.trim() !== '') {
+        const imageUrl = `/static/img/${question.image}`;
+        questionHTML += `
+            <div class="question-image-container" style="margin: 15px 0; text-align: center;">
+                <img src="${imageUrl}" 
+                     alt="Imagen del ejercicio" 
+                     class="question-image"
+                     onclick="expandQuestionImage('${imageUrl}')"
+                     style="max-width: 100%; max-height: 250px; border-radius: 8px; cursor: pointer; transition: transform 0.3s ease;">
+            </div>
+        `;
+    }
+    
+    document.getElementById('modalQuestionText').innerHTML = questionHTML;
+    
+    // Actualizar opciones
+    const optionsContainer = document.getElementById('modalOptionsContainer');
+    optionsContainer.innerHTML = '';
+    
+    if (question.has_options && question.options && question.options.length > 0) {
+        let optionsHTML = '';
+        
+        question.options.forEach((option, index) => {
+            const letter = String.fromCharCode(65 + index);
+            optionsHTML += `
+                <div class="option-card" onclick="checkAnswer(${index}, '${question._id}')" data-index="${index}">
+                    <div class="option-letter">${letter}</div>
+                    <div class="option-text">${option}</div>
+                </div>
+            `;
+        });
+        
+        optionsContainer.innerHTML = optionsHTML;
+    } else {
+        optionsContainer.innerHTML = '<p style="color: var(--gray); font-style: italic; text-align: center;">Esta es una pregunta de respuesta abierta</p>';
+    }
+    
+    // Actualizar respuesta y solución
+    document.getElementById('modalAnswerText').innerHTML = question.answer || question.correct_answer || '';
+    
+    // Mostrar solución si existe
+    const solutionContainer = document.getElementById('solutionContainer');
+    if (question.solution && question.solution.trim() !== '') {
+        document.getElementById('modalSolutionText').innerHTML = question.solution;
+        if (solutionContainer) {
+            solutionContainer.style.display = 'block';
         }
+    } else if (solutionContainer) {
+        solutionContainer.style.display = 'none';
+    }
+    
+    // Ocultar respuesta inicialmente
+    document.getElementById('modalAnswerSection').style.display = 'none';
+    
+    // Mostrar modal
+    document.getElementById('studyQuestionModal').style.display = 'flex';
+    
+    // Actualizar MathJax después de un breve retraso
+    if (window.MathJax) {
+        setTimeout(() => {
+            MathJax.typesetPromise()
+                .catch(err => console.log('MathJax error:', err));
+        }, 100);
+    }
+}
         
         function previewQuestion(questionId) {
             const question = allQuestions.find(q => q._id === questionId);
@@ -1908,16 +1935,84 @@ function editQuestion(questionId) {
 
 // Función para ver imagen ampliada
 function expandImage(src) {
-    document.getElementById('modalExpandedImage').src = src;
-    document.getElementById('imageModal').style.display = 'flex';
+    expandQuestionImage(src);
 }
 
 // Función para cerrar imagen ampliada
-function closeImageModal() {
-    document.getElementById('imageModal').style.display = 'none';
-}
+
 
 // Evitar que el clic en la imagen cierre el modal
 document.getElementById('modalExpandedImage').addEventListener('click', function(e) {
     e.stopPropagation();
 });
+
+
+// Agregar esta función cerca de las otras funciones de utilidad
+function expandQuestionImage(src) {
+    const modal = document.createElement('div');
+    modal.className = 'image-expand-modal';
+    modal.innerHTML = `
+        <div class="image-expand-overlay" onclick="closeExpandedImage()">
+            <button class="close-expanded-btn">&times;</button>
+            <img src="${src}" alt="Imagen ampliada" class="expanded-image"
+                 onerror="this.onerror=null; this.style.display='none';">
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Prevenir scroll del body
+    document.body.style.overflow = 'hidden';
+    
+    // Agregar evento de tecla Escape
+    document.addEventListener('keydown', handleEscKey);
+    
+    function handleEscKey(e) {
+        if (e.key === 'Escape') {
+            closeExpandedImage();
+        }
+    }
+}
+
+function closeExpandedImage() {
+    const modal = document.querySelector('.image-expand-modal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+    document.removeEventListener('keydown', handleEscKey);
+}
+
+// Función para expandir imagen (IGUAL QUE EN index.js)
+function expandQuestionImage(src) {
+    const modal = document.createElement('div');
+    modal.className = 'image-expand-modal';
+    modal.innerHTML = `
+        <div class="image-expand-overlay" onclick="closeExpandedImage()">
+            <button class="close-expanded-btn">&times;</button>
+            <img src="${src}" alt="Imagen ampliada" class="expanded-image"
+                 onerror="this.onerror=null; this.style.display='none';">
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Prevenir scroll del body
+    document.body.style.overflow = 'hidden';
+    
+    // Agregar evento de tecla Escape
+    document.addEventListener('keydown', handleEscKey);
+    
+    function handleEscKey(e) {
+        if (e.key === 'Escape') {
+            closeExpandedImage();
+        }
+    }
+}
+
+function closeExpandedImage() {
+    const modal = document.querySelector('.image-expand-modal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+    document.removeEventListener('keydown', handleEscKey);
+}
