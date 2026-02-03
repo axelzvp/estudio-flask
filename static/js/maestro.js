@@ -16,6 +16,8 @@
         let currentEditQuestionId = null;
         let studySelectedSubject = 'todos';
         let studySelectedTopic = 'todos';
+        let currentImageFile = null;
+let existingImageUrl = null;
         
         // Verificar autenticación y rol
         document.addEventListener('DOMContentLoaded', async function() {
@@ -475,54 +477,76 @@
             }
         }
         
-        function createQuestionCard(question) {
-            const card = document.createElement('div');
-            card.className = 'question-card';
-            
-            // Truncar texto largo
-            const questionText = question.question.length > 200 ? 
-                question.question.substring(0, 200) + '...' : question.question;
-            
-            const isLong = question.question.length > 200;
-            
-            card.innerHTML = `
-                <div class="question-header">
-                    <div class="question-badges">
-                        <span class="badge badge-subject">${question.subject}</span>
-                        <span class="badge badge-topic">${question.topic}</span>
-                        <span class="badge badge-university">${question.university || 'N/A'}</span>
-                        ${question.has_options ? 
-                            '<span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem;">Opciones</span>' : 
-                            '<span style="background: rgba(16, 185, 129, 0.15); color: var(--primary); padding: 3px 8px; border-radius: 12px; font-size: 0.7rem;">Abierta</span>'}
-                    </div>
+function createQuestionCard(question) {
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    
+    // Truncar texto largo
+    const questionText = question.question.length > 200 ? 
+        question.question.substring(0, 200) + '...' : question.question;
+    
+    const isLong = question.question.length > 200;
+    
+    // Crear HTML para imagen si existe
+    let imageHTML = '';
+    if (question.image && question.image.trim() !== '') {
+        const imageUrl = `/static/img/${question.image}`;
+        imageHTML = `
+            <div class="question-image-preview" style="margin: 10px 0;">
+                <img src="${imageUrl}" 
+                     alt="Imagen de la pregunta" 
+                     style="max-width: 100%; max-height: 150px; border-radius: 5px; border: 1px solid #ddd; cursor: pointer;"
+                     onclick="expandImage('${imageUrl}')">
+                <div style="font-size: 0.8rem; color: #666; margin-top: 5px; text-align: center;">
+                    <i class="fas fa-image"></i> Contiene imagen
                 </div>
-                
-                <div class="question-content ${isLong ? '' : 'expanded'}">
-                    ${questionText}
-                    ${isLong ? '<span class="read-more" onclick="toggleQuestionText(this)">[leer más]</span>' : ''}
-                </div>
-                
-                <div class="question-actions">
-                    <button class="btn btn-warning btn-sm" onclick="editQuestion('${question._id}')">
-                        <i class="fas fa-edit"></i> Editar
-                    </button>
-                    <button class="btn btn-danger btn-sm" onclick="confirmDelete('${question._id}')">
-                        <i class="fas fa-trash"></i> Eliminar
-                    </button>
-                    <button class="btn btn-outline btn-sm" onclick="previewQuestion('${question._id}')">
-                        <i class="fas fa-eye"></i> Vista previa
-                    </button>
-                </div>
-                
-                <div class="question-stats">
-                    <span><i class="fas fa-eye"></i> ${question.times_shown || 0} vistas</span>
-                    <span><i class="fas fa-check-circle"></i> ${question.times_correct || 0} correctas</span>
-                    <span><i class="fas fa-calendar"></i> ${formatDate(question.created_at)}</span>
-                </div>
-            `;
-            
-            return card;
-        }
+            </div>
+        `;
+    }
+    
+    card.innerHTML = `
+        <div class="question-header">
+            <div class="question-badges">
+                <span class="badge badge-subject">${question.subject}</span>
+                <span class="badge badge-topic">${question.topic}</span>
+                <span class="badge badge-university">${question.university || 'N/A'}</span>
+                ${question.has_options ? 
+                    '<span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem;">Opciones</span>' : 
+                    '<span style="background: rgba(16, 185, 129, 0.15); color: var(--primary); padding: 3px 8px; border-radius: 12px; font-size: 0.7rem;">Abierta</span>'}
+                ${question.image ? 
+                    '<span style="background: rgba(168, 85, 247, 0.15); color: #a855f7; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem;"><i class="fas fa-image"></i></span>' : 
+                    ''}
+            </div>
+        </div>
+        
+        <div class="question-content ${isLong ? '' : 'expanded'}">
+            ${questionText}
+            ${isLong ? '<span class="read-more" onclick="toggleQuestionText(this)">[leer más]</span>' : ''}
+        </div>
+        
+        ${imageHTML}
+        
+        <div class="question-actions">
+            <button class="btn btn-warning btn-sm" onclick="editQuestion('${question._id}')">
+                <i class="fas fa-edit"></i> Editar
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete('${question._id}')">
+                <i class="fas fa-trash"></i> Eliminar
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="previewQuestion('${question._id}')">
+                <i class="fas fa-eye"></i> Vista previa
+            </button>
+        </div>
+        
+        <div class="question-stats">
+            <span><i class="fas fa-eye"></i> ${question.times_shown || 0} vistas</span>
+            <span><i class="fas fa-check-circle"></i> ${question.times_correct || 0} correctas</span>
+            <span><i class="fas fa-calendar"></i> ${formatDate(question.created_at)}</span>
+        </div>
+    `;
+    
+    return card;
+}
         
         function toggleQuestionText(element) {
             const content = element.closest('.question-content');
@@ -911,6 +935,23 @@
             document.getElementById('modalQuestionTopic').textContent = question.topic;
             document.getElementById('modalQuestionUniversity').textContent = question.university;
             document.getElementById('modalQuestionText').innerHTML = question.question;
+            // Crear contenido de pregunta con imagen si existe
+            let questionHTML = question.question;
+            
+            if (question.image) {
+                questionHTML += `
+                    <div style="margin: 15px 0; text-align: center;">
+                        <img src="/static/img/${question.image}" 
+                             alt="Imagen del ejercicio" 
+                             style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
+                            <i class="fas fa-image"></i> Imagen del ejercicio
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('modalQuestionText').innerHTML = questionHTML;
             
             const optionsContainer = document.getElementById('modalOptionsContainer');
             optionsContainer.innerHTML = '';
@@ -1019,6 +1060,8 @@
         function resetModal() {
             isEditMode = false;
             currentEditQuestionId = null;
+             currentImageFile = null;
+             existingImageUrl = null;
             
             document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Nueva Pregunta';
             document.getElementById('saveQuestionBtn').innerHTML = '<i class="fas fa-save"></i> Guardar Pregunta';
@@ -1033,6 +1076,10 @@
             document.getElementById('modalUniversity').value = 'UNAM';
             document.getElementById('modalNewUniversity').style.display = 'none';
             document.getElementById('modalNewUniversity').value = '';
+             // Limpiar imagen
+            document.getElementById('modalImage').value = '';
+            document.getElementById('imagePreviewContainer').style.display = 'none';
+            document.getElementById('previewImage').src = '';
             
             if (document.getElementById('hasOptionsCheckbox')) {
                 document.getElementById('hasOptionsCheckbox').checked = false;
@@ -1047,6 +1094,7 @@
                     radio.checked = false;
                 });
             }
+            
         }
         
         function editQuestion(questionId) {
@@ -1093,33 +1141,106 @@
             
             document.getElementById('questionModal').classList.add('active');
         }
+
+        // Modificar la función saveQuestion para manejar imágenes
+async function saveQuestion() {
+    // Obtener valores
+    const subject = document.getElementById('modalSubject').value;
+    const newSubject = document.getElementById('modalNewSubject').value.trim();
+    const finalSubject = subject === '_new_' && newSubject ? newSubject : subject;
+    
+    const topic = document.getElementById('modalTopic').value.trim();
+    const questionText = document.getElementById('modalQuestion').value.trim();
+    
+    const universitySelect = document.getElementById('modalUniversity').value;
+    const newUniversity = document.getElementById('modalNewUniversity').value.trim();
+    const finalUniversity = universitySelect === '_new_' && newUniversity ? newUniversity : universitySelect;
+    
+    // Validar
+    if (!finalSubject || !topic || !questionText) {
+        showNotification('Por favor completa todos los campos requeridos', 'error');
+        return;
+    }
+    
+    // Crear FormData para enviar archivo
+    const formData = new FormData();
+    
+    // Agregar campos de texto
+    formData.append('subject', finalSubject);
+    formData.append('topic', topic);
+    formData.append('question', questionText);
+    formData.append('university', finalUniversity);
+    formData.append('solution', document.getElementById('modalSolution').value.trim());
+    formData.append('has_options', document.getElementById('hasOptionsCheckbox').checked.toString());
+    
+    // Agregar imagen si hay una nueva
+    if (currentImageFile) {
+        formData.append('image', currentImageFile);
+    }
+    
+    // Agregar opciones múltiples o respuesta abierta
+    if (document.getElementById('hasOptionsCheckbox').checked) {
+        const options = [
+            document.getElementById('optionA').value.trim(),
+            document.getElementById('optionB').value.trim(),
+            document.getElementById('optionC').value.trim(),
+            document.getElementById('optionD').value.trim()
+        ];
         
-        async function saveQuestion() {
-            // Obtener valores
-            const subject = document.getElementById('modalSubject').value;
-            const newSubject = document.getElementById('modalNewSubject').value.trim();
-            const finalSubject = subject === '_new_' && newSubject ? newSubject : subject;
-            
-            const topic = document.getElementById('modalTopic').value.trim();
-            const questionText = document.getElementById('modalQuestion').value.trim();
-            
-            const universitySelect = document.getElementById('modalUniversity').value;
-            const newUniversity = document.getElementById('modalNewUniversity').value.trim();
-            const finalUniversity = universitySelect === '_new_' && newUniversity ? newUniversity : universitySelect;
-            
-            // Validar
-            if (!finalSubject || !topic || !questionText) {
-                showNotification('Por favor completa todos los campos requeridos', 'error');
-                return;
-            }
-            
+        const emptyOptions = options.filter(opt => !opt);
+        if (emptyOptions.length > 0) {
+            showNotification('Todas las opciones deben tener texto', 'error');
+            return;
+        }
+        
+        const correctOptionInput = document.querySelector('input[name="correctOption"]:checked');
+        if (!correctOptionInput) {
+            showNotification('Debes seleccionar la opción correcta', 'error');
+            return;
+        }
+        
+        const correctOptionIndex = parseInt(correctOptionInput.value);
+        
+        formData.append('options', JSON.stringify(options));
+        formData.append('correct_option', correctOptionIndex.toString());
+        formData.append('correct_answer', `${String.fromCharCode(65 + correctOptionIndex)}. ${options[correctOptionIndex]}`);
+        formData.append('answer', '');
+    } else {
+        const answer = document.getElementById('modalAnswer').value.trim();
+        if (!answer) {
+            showNotification('La respuesta es requerida para preguntas abiertas', 'error');
+            return;
+        }
+        
+        formData.append('options', JSON.stringify([]));
+        formData.append('correct_option', '-1');
+        formData.append('correct_answer', answer);
+        formData.append('answer', answer);
+    }
+    
+    const saveBtn = document.getElementById('saveQuestionBtn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner loading"></i> ' + 
+        (isEditMode ? 'Actualizando...' : 'Guardando...');
+    saveBtn.disabled = true;
+    
+    try {
+        let response;
+        let endpoint;
+        
+        if (isEditMode && currentEditQuestionId) {
+            // Para actualizar, necesitamos enviar como JSON normal
+            // Ya que PUT con FormData es más complejo
+            // Enviar sin imagen por ahora (se puede mejorar)
             const questionData = {
                 subject: finalSubject,
                 topic: topic,
                 question: questionText,
                 university: finalUniversity,
-                has_options: document.getElementById('hasOptionsCheckbox').checked,
                 solution: document.getElementById('modalSolution').value.trim(),
+                has_options: document.getElementById('hasOptionsCheckbox').checked,
+                // Mantener imagen existente si no se subió nueva
+                image: currentImageFile ? undefined : existingImageUrl
             };
             
             if (questionData.has_options) {
@@ -1129,85 +1250,63 @@
                     document.getElementById('optionC').value.trim(),
                     document.getElementById('optionD').value.trim()
                 ];
-                
-                const emptyOptions = options.filter(opt => !opt);
-                if (emptyOptions.length > 0) {
-                    showNotification('Todas las opciones deben tener texto', 'error');
-                    return;
-                }
-                
-                const correctOptionInput = document.querySelector('input[name="correctOption"]:checked');
-                if (!correctOptionInput) {
-                    showNotification('Debes seleccionar la opción correcta', 'error');
-                    return;
-                }
-                
-                const correctOptionIndex = parseInt(correctOptionInput.value);
+                const correctOptionIndex = parseInt(document.querySelector('input[name="correctOption"]:checked').value);
                 
                 questionData.options = options;
                 questionData.correct_option = correctOptionIndex;
                 questionData.correct_answer = `${String.fromCharCode(65 + correctOptionIndex)}. ${options[correctOptionIndex]}`;
                 questionData.answer = '';
             } else {
-                const answer = document.getElementById('modalAnswer').value.trim();
-                if (!answer) {
-                    showNotification('La respuesta es requerida para preguntas abiertas', 'error');
-                    return;
-                }
-                
+                questionData.correct_answer = document.getElementById('modalAnswer').value.trim();
+                questionData.answer = document.getElementById('modalAnswer').value.trim();
                 questionData.options = [];
                 questionData.correct_option = -1;
-                questionData.correct_answer = answer;
-                questionData.answer = answer;
             }
             
-            const saveBtn = document.getElementById('saveQuestionBtn');
-            const originalText = saveBtn.innerHTML;
-            saveBtn.innerHTML = '<i class="fas fa-spinner loading"></i> ' + 
-                (isEditMode ? 'Actualizando...' : 'Guardando...');
-            saveBtn.disabled = true;
-            
-            try {
-                let response;
-                let endpoint;
-                
-                if (isEditMode && currentEditQuestionId) {
-                    endpoint = `/api/questions/${currentEditQuestionId}`;
-                    response = await fetch(endpoint, {
-                        method: 'PUT',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(questionData)
-                    });
-                } else {
-                    endpoint = '/api/questions';
-                    response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(questionData)
-                    });
-                }
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showNotification(
-                        isEditMode ? '✅ Pregunta actualizada' : '✅ Pregunta guardada', 
-                        'success'
-                    );
-                    closeModal();
-                    await loadAllData(); // Recargar datos
-                } else {
-                    showNotification('❌ Error: ' + (data.error || 'Error desconocido'), 'error');
-                }
-            } catch (error) {
-                console.error('Error guardando pregunta:', error);
-                showNotification('❌ Error de conexión', 'error');
-            } finally {
-                saveBtn.innerHTML = originalText;
-                saveBtn.disabled = false;
-            }
+            endpoint = `/api/questions/${currentEditQuestionId}`;
+            response = await fetch(endpoint, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(questionData)
+            });
+        } else {
+            // Crear nueva pregunta con FormData (incluye imagen)
+            endpoint = '/api/questions';
+            response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            });
         }
         
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(
+                isEditMode ? '✅ Pregunta actualizada' : '✅ Pregunta guardada', 
+                'success'
+            );
+            closeModal();
+            await loadAllData();
+        } else {
+            showNotification('❌ Error: ' + (data.error || 'Error desconocido'), 'error');
+        }
+    } catch (error) {
+        console.error('Error guardando pregunta:', error);
+        showNotification('❌ Error de conexión', 'error');
+    } finally {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    }
+}
+
+// Inicializar vista previa de imagen
+document.addEventListener('DOMContentLoaded', function() {
+    setupImagePreview();
+});
+        
+
+
+
         function confirmDelete(questionId) {
             questionToDelete = questionId;
             document.getElementById('confirmModal').style.display = 'flex';
@@ -1711,7 +1810,114 @@
 
 
 
-
-
-
+// Función para mostrar vista previa de imagen
+function setupImagePreview() {
+    const imageInput = document.getElementById('modalImage');
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    const previewImage = document.getElementById('previewImage');
     
+    if (!imageInput || !previewContainer) return;
+    
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            currentImageFile = file;
+            
+            // Mostrar vista previa
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            currentImageFile = null;
+            previewContainer.style.display = 'none';
+        }
+    });
+}
+
+// Función para quitar imagen
+function removeImage() {
+    currentImageFile = null;
+    existingImageUrl = null;
+    
+    document.getElementById('modalImage').value = '';
+    document.getElementById('imagePreviewContainer').style.display = 'none';
+    document.getElementById('previewImage').src = '';
+}
+
+// Modificar la función editQuestion para cargar imagen existente
+function editQuestion(questionId) {
+    const question = allQuestions.find(q => q._id === questionId);
+    if (!question) {
+        showNotification('Pregunta no encontrada', 'error');
+        return;
+    }
+    
+    isEditMode = true;
+    currentEditQuestionId = questionId;
+    
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Editar Pregunta';
+    document.getElementById('saveQuestionBtn').innerHTML = '<i class="fas fa-save"></i> Actualizar Pregunta';
+    
+    // Cargar datos básicos
+    document.getElementById('modalSubject').value = question.subject;
+    document.getElementById('modalTopic').value = question.topic;
+    document.getElementById('modalQuestion').value = question.question;
+    document.getElementById('modalSolution').value = question.solution || '';
+    document.getElementById('modalUniversity').value = question.university || 'UNAM';
+    
+    // Cargar imagen existente si hay
+    if (question.image) {
+        existingImageUrl = question.image;
+        document.getElementById('imagePreviewContainer').style.display = 'block';
+        document.getElementById('previewImage').src = `/static/img/${question.image}`;
+    } else {
+        existingImageUrl = null;
+        document.getElementById('imagePreviewContainer').style.display = 'none';
+    }
+    
+    // Cargar opciones
+    if (question.has_options && question.options && question.options.length > 0) {
+        document.getElementById('hasOptionsCheckbox').checked = true;
+        toggleOptions();
+        
+        document.getElementById('optionA').value = question.options[0] || '';
+        document.getElementById('optionB').value = question.options[1] || '';
+        document.getElementById('optionC').value = question.options[2] || '';
+        document.getElementById('optionD').value = question.options[3] || '';
+        
+        if (question.correct_option >= 0 && question.correct_option < 4) {
+            const correctRadio = document.getElementById(`correctOption${String.fromCharCode(65 + question.correct_option)}`);
+            if (correctRadio) {
+                correctRadio.checked = true;
+            }
+        }
+        
+        document.getElementById('modalAnswer').value = '';
+    } else {
+        document.getElementById('hasOptionsCheckbox').checked = false;
+        toggleOptions();
+        document.getElementById('modalAnswer').value = question.answer || question.correct_answer || '';
+    }
+    
+    document.getElementById('questionModal').classList.add('active');
+}
+
+
+// Función para ver imagen ampliada
+function expandImage(src) {
+    document.getElementById('modalExpandedImage').src = src;
+    document.getElementById('imageModal').style.display = 'flex';
+}
+
+// Función para cerrar imagen ampliada
+function closeImageModal() {
+    document.getElementById('imageModal').style.display = 'none';
+}
+
+// Evitar que el clic en la imagen cierre el modal
+document.getElementById('modalExpandedImage').addEventListener('click', function(e) {
+    e.stopPropagation();
+});

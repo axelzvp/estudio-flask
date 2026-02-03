@@ -5,6 +5,7 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime
+from werkzeug.utils import secure_filename
 import random
 import hashlib
 import os
@@ -15,6 +16,11 @@ MONGO_URI = os.environ.get("MONGO_URI")
 
 # ========== CONFIGURACIÓN DE LA APLICACIÓN ==========
 app = Flask(__name__)
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg'}
+UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'img')
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 CORS(app)
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 
@@ -25,6 +31,16 @@ questions_collection = db['matematicas']
 users_collection = db['usuarios']
 
 # ========== FUNCIONES HELPER ==========
+# Crear carpeta si no existe
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 def hash_password(password):
     """Encripta una contraseña usando SHA-256"""
     return hashlib.sha256(password.encode()).hexdigest()
@@ -229,46 +245,79 @@ def get_all_questions():
 @app.route('/api/questions', methods=['POST'])
 @maestro_required
 def create_question():
-    """Crea una nueva pregunta"""
     try:
-        data = request.get_json()
-        
+        # Si viene como multipart/form-data
+        data = request.form.to_dict()
+
         # Validación
         if not data.get('question'):
             return jsonify({
                 'success': False,
                 'error': 'La pregunta es requerida'
             }), 400
-        
+
+        # ---- Manejo de imagen ----
+        image_file = request.files.get('image')
+        image_filename = None
+
+        if image_file and image_file.filename != '':
+            if allowed_file(image_file.filename):
+                filename = secure_filename(image_file.filename)
+                # Agregar timestamp para evitar colisiones
+                filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                image_file.save(image_path)
+                image_filename = filename
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Tipo de archivo no permitido. Use PNG, JPG, JPEG, GIF, BMP o SVG'
+                }), 400
+
+        # Parsear campos que vienen como string
+        has_options = data.get('has_options', 'false').lower() == 'true'
+        options = []
+        try:
+            if data.get('options'):
+                import json
+                options = json.loads(data.get('options'))
+        except:
+            options = []
+
+        correct_option = int(data.get('correct_option', -1))
+
         # Crear documento de pregunta
         question_doc = {
             'subject': data.get('subject', 'Matemáticas'),
             'topic': data.get('topic', 'General'),
             'question': data['question'],
-            'has_options': data.get('has_options', False),
-            'options': data.get('options', []),
+            'has_options': has_options,
+            'options': options,
             'correct_answer': data.get('correct_answer', ''),
-            'correct_option': data.get('correct_option', -1),
+            'correct_option': correct_option,
             'solution': data.get('solution', ''),
             'university': data.get('university', 'UNAM'),
+            'image': image_filename,  # Guardar nombre del archivo
             'created_at': datetime.utcnow(),
             'times_shown': 0,
             'times_correct': 0
         }
-        
+
         # Insertar en MongoDB
         result = questions_collection.insert_one(question_doc)
-        
+
         # Devolver pregunta creada
         question_doc['_id'] = str(result.inserted_id)
+
         return jsonify({
             'success': True,
             'message': 'Pregunta creada exitosamente',
             'question': question_doc
         }), 201
-        
+
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
     
 @app.route('/api/bulk_questions', methods=['POST'])
 @maestro_required

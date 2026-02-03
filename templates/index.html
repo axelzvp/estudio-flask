@@ -537,63 +537,181 @@
                 getBtn.disabled = false;
             }
         }
+
+
+function loadImagesInQuestion() {
+    const images = document.querySelectorAll('img[src]');
+    
+    images.forEach(img => {
+        // Remover estilos inline conflictivos
+        img.style.maxWidth = '';
+        img.style.maxHeight = '';
+        img.style.height = '';
+        img.style.width = '';
         
-        function displayStudyQuestion(question) {
-            // Actualizar badges
-            document.getElementById('subjectText').textContent = question.subject;
-            document.getElementById('topicText').textContent = question.topic;
-            document.getElementById('universityText').textContent = question.university || 'General';
-            
-            // Actualizar pregunta
-            document.getElementById('modalQuestionText').innerHTML = question.question;
-            
-            // Actualizar opciones
-            const optionsContainer = document.getElementById('modalOptionsContainer');
-            optionsContainer.innerHTML = '';
-            
-            if (question.has_options && question.options && question.options.length > 0) {
-                let optionsHTML = '';
-                
-                question.options.forEach((option, index) => {
-                    const letter = String.fromCharCode(65 + index);
-                    optionsHTML += `
-                        <div class="option-card" onclick="checkAnswer(${index}, '${question._id}')" data-index="${index}">
-                            <div class="option-letter">${letter}</div>
-                            <div class="option-text">${option}</div>
-                        </div>
-                    `;
-                });
-                
-                optionsContainer.innerHTML = optionsHTML;
-            } else {
-                optionsContainer.innerHTML = '<p style="color: var(--gray); font-style: italic; text-align: center;">Esta es una pregunta de respuesta abierta</p>';
-            }
-            
-            // Actualizar respuesta y solución
-            document.getElementById('modalAnswerText').innerHTML = question.answer || question.correct_answer || '';
-            
-            const solutionContainer = document.getElementById('solutionContainer');
-            if (question.solution && question.solution.trim() !== '') {
-                document.getElementById('modalSolutionText').innerHTML = question.solution;
-                solutionContainer.style.display = 'block';
-            } else {
-                solutionContainer.style.display = 'none';
-            }
-            
-            // Ocultar respuesta inicialmente
-            document.getElementById('modalAnswerSection').style.display = 'none';
-            
-            // Mostrar modal
-            document.getElementById('studyQuestionModal').classList.add('active');
-            
-            // Actualizar MathJax
-            if (window.MathJax) {
-                setTimeout(() => {
-                    MathJax.typesetPromise()
-                        .catch(err => console.log('MathJax error:', err));
-                }, 50);
-            }
+        // Aplicar solo las clases CSS
+        img.classList.add('img-loaded');
+        
+        // Verificar si la imagen ya está cargada
+        if (img.complete) {
+            handleImageLoad(img);
+        } else {
+            img.onload = () => handleImageLoad(img);
+            img.onerror = () => handleImageError(img);
         }
+    });
+}
+
+function handleImageLoad(img) {
+    img.style.opacity = '1';
+    img.style.transition = 'opacity 0.3s ease';
+    console.log('✅ Imagen cargada:', img.src);
+}
+
+function handleImageError(img) {
+    console.error('❌ Error cargando imagen:', img.src);
+    
+    // Crear contenedor de error
+    const container = document.createElement('div');
+    container.className = 'img-error';
+    container.innerHTML = `
+        <i class="fas fa-exclamation-triangle"></i>
+        <div>No se pudo cargar la imagen</div>
+        <small>${img.src.split('/').pop()}</small>
+    `;
+    
+    // Reemplazar la imagen con el mensaje de error
+    img.parentNode.replaceChild(container, img);
+}
+
+
+function closeExpandedImage() {
+    const modal = document.querySelector('.image-expand-modal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+    document.removeEventListener('keydown', handleEscKey);
+}
+
+
+
+
+// Función para expandir imagen
+function expandQuestionImage(src) {
+    const modal = document.createElement('div');
+    modal.className = 'image-expand-modal';
+    modal.innerHTML = `
+        <div class="image-expand-overlay" onclick="closeExpandedImage()">
+            <button class="close-expanded-btn">&times;</button>
+            <img src="${src}" alt="Imagen ampliada" class="expanded-image"
+                 onerror="this.onerror=null; this.style.display='none';">
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Prevenir scroll del body
+    document.body.style.overflow = 'hidden';
+    
+    // Agregar evento de tecla Escape
+    document.addEventListener('keydown', handleEscKey);
+    
+    function handleEscKey(e) {
+        if (e.key === 'Escape') {
+            closeExpandedImage();
+        }
+    }
+}
+
+
+async function checkImageExists(url) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+    });
+}
+
+function displayStudyQuestion(question) {
+    // Actualizar badges
+    document.getElementById('subjectText').textContent = question.subject;
+    document.getElementById('topicText').textContent = question.topic;
+    document.getElementById('universityText').textContent = question.university || 'General';
+    
+    // Actualizar pregunta
+    let questionHTML = question.question;
+    
+    // Añadir imagen si existe - CORREGIDO
+    if (question.image && question.image.trim() !== '') {
+           const imageUrl = `/static/img/${question.image}`;
+           questionHTML += `
+               <div class="question-image-container">
+                   <img src="${imageUrl}" 
+                        alt="Imagen del ejercicio" 
+                        class="question-image"
+                        onclick="expandQuestionImage('${imageUrl}')">
+               </div>
+           `;
+       }
+    
+    document.getElementById('modalQuestionText').innerHTML = questionHTML;
+    
+    // Resto del código sigue igual...
+    // Actualizar opciones
+    const optionsContainer = document.getElementById('modalOptionsContainer');
+    optionsContainer.innerHTML = '';
+    
+    if (question.has_options && question.options && question.options.length > 0) {
+        let optionsHTML = '';
+        
+        question.options.forEach((option, index) => {
+            const letter = String.fromCharCode(65 + index);
+            optionsHTML += `
+                <div class="option-card" onclick="checkAnswer(${index}, '${question._id}')" data-index="${index}">
+                    <div class="option-letter">${letter}</div>
+                    <div class="option-text">${option}</div>
+                </div>
+            `;
+        });
+        
+        optionsContainer.innerHTML = optionsHTML;
+    } else {
+        optionsContainer.innerHTML = '<p style="color: var(--gray); font-style: italic; text-align: center;">Esta es una pregunta de respuesta abierta</p>';
+    }
+    
+    // Actualizar respuesta y solución
+    document.getElementById('modalAnswerText').innerHTML = question.answer || question.correct_answer || '';
+    
+    const solutionContainer = document.getElementById('solutionContainer');
+    if (question.solution && question.solution.trim() !== '') {
+        document.getElementById('modalSolutionText').innerHTML = question.solution;
+        solutionContainer.style.display = 'block';
+    } else {
+        solutionContainer.style.display = 'none';
+    }
+    
+    // Ocultar respuesta inicialmente
+    document.getElementById('modalAnswerSection').style.display = 'none';
+    
+    // Mostrar modal
+    document.getElementById('studyQuestionModal').classList.add('active');
+    
+    // Asegurar que las imágenes se carguen bien - CORREGIDO
+    setTimeout(() => {
+        MathJax.typesetPromise().catch(console.error);
+        // Las imágenes se cargarán automáticamente
+    }, 100);
+
+    
+    // Actualizar MathJax
+    if (window.MathJax) {
+        setTimeout(() => {
+            MathJax.typesetPromise()
+                .catch(err => console.log('MathJax error:', err));
+        }, 100);
+    }
+}
         
 function checkAnswer(selectedIndex, questionId) {
     const question = allQuestions.find(q => q._id === questionId);
@@ -619,9 +737,9 @@ function checkAnswer(selectedIndex, questionId) {
             showNotification('✓ Correcto', 'success');
         } else {
             selectedCard.classList.add('incorrect');
-            showNotification('✗ Incorrecto', 'error'); // Corregí el typo
+            showNotification('✗ Incorrecto', 'error');
             
-            // AGREGAR ESTO: Mostrar claramente cuál es la respuesta correcta
+            // Mostrar claramente cuál es la respuesta correcta
             if (question.correct_option >= 0) {
                 const correctCard = optionCards[question.correct_option];
                 if (correctCard) {
@@ -644,6 +762,9 @@ function checkAnswer(selectedIndex, questionId) {
         }
     }
     
+    // Asegurar que las imágenes en las opciones se vean bien
+    forceImageLoading();
+    
     // Mostrar respuesta y solución si existe
     if (question.solution && question.solution.trim() !== '') {
         setTimeout(() => {
@@ -651,14 +772,16 @@ function checkAnswer(selectedIndex, questionId) {
         }, 500);
     }
     
-    // Actualizar MathJax si hay fórmulas en las opciones
+    // Actualizar MathJax
     if (window.MathJax) {
         setTimeout(() => {
             MathJax.typesetPromise()
                 .catch(err => console.log('MathJax error:', err));
-        }, 100);
+        }, 150);
     }
 }
+
+
         
         function closeStudyModal() {
             document.getElementById('studyQuestionModal').classList.remove('active');
@@ -777,57 +900,96 @@ function checkAnswer(selectedIndex, questionId) {
             const seconds = examState.timeLeft % 60;
             timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
+
         
-        function showExamQuestion(index) {
-            if (index < 0 || index >= examState.questions.length) return;
-            
-            examState.currentQuestionIndex = index;
-            const question = examState.questions[index];
-            
-            // Actualizar progreso
-            const progressPercent = ((index + 1) / examState.questions.length) * 100;
-            document.getElementById('examProgressFill').style.width = `${progressPercent}%`;
-            document.getElementById('examProgressText').textContent = `Pregunta ${index + 1}/${examState.questions.length}`;
-            
-            // Actualizar número de pregunta
-            document.getElementById('prevQuestionBtn').disabled = index === 0;
-            document.getElementById('nextQuestionBtn').disabled = index === examState.questions.length - 1;
-            
-            // Mostrar pregunta
-            const container = document.getElementById('examQuestionContainer');
-            container.innerHTML = `
-                <div class="exam-question-header">
-                    <div class="question-number">Pregunta #${index + 1}</div>
-                    <div class="question-badges">
-                        <span class="badge badge-subject">${question.subject}</span>
-                        <span class="badge badge-topic">${question.topic}</span>
-                    </div>
+function showExamQuestion(index) {
+    if (index < 0 || index >= examState.questions.length) return;
+    
+    examState.currentQuestionIndex = index;
+    const question = examState.questions[index];
+    
+    // Actualizar progreso
+    const progressPercent = ((index + 1) / examState.questions.length) * 100;
+    document.getElementById('examProgressFill').style.width = `${progressPercent}%`;
+    document.getElementById('examProgressText').textContent = `Pregunta ${index + 1}/${examState.questions.length}`;
+    
+    // Actualizar número de pregunta
+    document.getElementById('prevQuestionBtn').disabled = index === 0;
+    document.getElementById('nextQuestionBtn').disabled = index === examState.questions.length - 1;
+    
+    // Crear HTML de pregunta con imagen - CORREGIDO
+    let questionHTML = question.question;
+    
+    // Añadir imagen si existe - con manejo de errores
+    if (question.image && question.image.trim() !== '') {
+        const imageUrl = `/static/img/${question.image}`;
+        questionHTML += `
+            <div class="question-image-container">
+                <img src="${imageUrl}" 
+                     alt="Imagen del ejercicio" 
+                     class="question-image"
+                     onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='block';"
+                     onclick="expandQuestionImage('${imageUrl}')">
+                <div class="image-error" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>No se pudo cargar la imagen</span>
                 </div>
-                
-                <div class="exam-question-content">
-                    ${question.question}
+                <div class="image-caption">
+                    <i class="fas fa-image"></i> Imagen del ejercicio
                 </div>
-                
-                <div class="exam-options-container" id="examOptionsContainer">
-                    ${generateExamOptionsHTML(question, index)}
-                </div>
-            `;
-            
-            // Marcar respuesta seleccionada si existe
-            const selectedAnswer = examState.answers[index];
-            if (selectedAnswer !== null) {
-                const options = container.querySelectorAll('.exam-option');
-                if (options[selectedAnswer]) {
-                    options[selectedAnswer].classList.add('selected');
-                }
-            }
-            
-            // Renderizar MathJax
-            if (window.MathJax) {
-                MathJax.typesetPromise()
-                    .catch(err => console.log('MathJax error:', err));
-            }
+            </div>
+        `;
+    }
+    
+    // Mostrar pregunta
+    const container = document.getElementById('examQuestionContainer');
+    container.innerHTML = `
+        <div class="exam-question-header">
+            <div class="question-number">Pregunta #${index + 1}</div>
+            <div class="question-badges">
+                <span class="badge badge-subject">${question.subject}</span>
+                <span class="badge badge-topic">${question.topic}</span>
+            </div>
+        </div>
+        
+        <div class="exam-question-content">
+            ${questionHTML}
+        </div>
+        
+        <div class="exam-options-container" id="examOptionsContainer">
+            ${generateExamOptionsHTML(question, index)}
+        </div>
+    `;
+    
+    // Marcar respuesta seleccionada si existe
+    const selectedAnswer = examState.answers[index];
+    if (selectedAnswer !== null) {
+        const options = container.querySelectorAll('.exam-option');
+        if (options[selectedAnswer]) {
+            options[selectedAnswer].classList.add('selected');
         }
+    }
+    
+    // Renderizar MathJax
+    if (window.MathJax) {
+        setTimeout(() => {
+            MathJax.typesetPromise()
+                .catch(err => console.log('MathJax error:', err));
+        }, 100);
+    }
+    
+    // Asegurar que las imágenes se muestren
+    setTimeout(() => {
+        forceImageLoading();
+        
+        // Agregar eventos a las imágenes en el examen
+        const examImages = container.querySelectorAll('.question-image');
+        examImages.forEach(img => {
+            img.style.maxHeight = '200px'; // Más pequeño para examen
+            img.style.cursor = 'pointer';
+        });
+    }, 50);
+}
         
         function generateExamOptionsHTML(question, questionIndex) {
             if (!question.has_options || !question.options || question.options.length === 0) {
