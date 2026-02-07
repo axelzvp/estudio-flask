@@ -80,6 +80,8 @@ let existingImageUrl = null;
                         loadStatsPage();
                     } else if (this.dataset.page === 'study') {
                         loadStudyPage();
+                    } else if (this.dataset.page === 'simulators') {
+                        loadSimulatorsPage();
                     }
                 });
             });
@@ -163,6 +165,13 @@ let existingImageUrl = null;
                     modalNewUniversityInput.style.display = 'none';
                 }
             });
+
+            // Simulador en modal
+            const simulatorCheckbox = document.getElementById('modalIsSimulator');
+            const simulatorNameInput = document.getElementById('modalSimulatorName');
+            if (simulatorCheckbox && simulatorNameInput) {
+                simulatorCheckbox.addEventListener('change', toggleSimulatorMode);
+            }
             
             // Checkbox para opciones múltiples
             const hasOptionsCheckbox = document.getElementById('hasOptionsCheckbox');
@@ -172,6 +181,20 @@ let existingImageUrl = null;
             
             // Configurar botón de eliminar en modal de confirmación
             document.getElementById('confirmDeleteBtn').addEventListener('click', deleteQuestion);
+
+            // Simuladores
+            const refreshSimBtn = document.getElementById('refreshSimulatorsBtn');
+            if (refreshSimBtn) {
+                refreshSimBtn.addEventListener('click', loadSimulatorsPage);
+            }
+            const createSimBtn = document.getElementById('createSimulatorBtn');
+            if (createSimBtn) {
+                createSimBtn.addEventListener('click', createSimulator);
+            }
+            const simulatorList = document.getElementById('simulatorListAdmin');
+            if (simulatorList) {
+                simulatorList.addEventListener('click', handleSimulatorListClick);
+            }
         }
         
         function initMathToolbars() {
@@ -243,6 +266,34 @@ let existingImageUrl = null;
             } else {
                 optionsSection.style.display = 'none';
                 openAnswerSection.style.display = 'block';
+            }
+        }
+
+        function toggleSimulatorMode() {
+            const simulatorCheckbox = document.getElementById('modalIsSimulator');
+            const simulatorNameInput = document.getElementById('modalSimulatorName');
+            const simulatorHint = document.getElementById('simulatorHint');
+            const subjectSelect = document.getElementById('modalSubject');
+            const topicInput = document.getElementById('modalTopic');
+            const newSubjectInput = document.getElementById('modalNewSubject');
+
+            if (!simulatorCheckbox || !simulatorNameInput || !subjectSelect || !topicInput) return;
+
+            if (simulatorCheckbox.checked) {
+                simulatorNameInput.style.display = 'block';
+                if (simulatorHint) simulatorHint.style.display = 'block';
+                subjectSelect.value = 'Simulador';
+                subjectSelect.disabled = true;
+                topicInput.disabled = true;
+                if (newSubjectInput) newSubjectInput.style.display = 'none';
+            } else {
+                simulatorNameInput.style.display = 'none';
+                if (simulatorHint) simulatorHint.style.display = 'none';
+                subjectSelect.disabled = false;
+                topicInput.disabled = false;
+                if (subjectSelect.value === 'Simulador') {
+                    subjectSelect.value = 'MatemÃ¡ticas';
+                }
             }
         }
         
@@ -784,6 +835,112 @@ function createQuestionCard(question) {
         function loadStudyPage() {
             loadStudySubjects();
         }
+
+        async function loadSimulatorsPage() {
+            try {
+                const response = await fetch('/api/simulators');
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderSimulatorsAdmin(data.simulators || []);
+                } else {
+                    showNotification('Error al cargar simuladores', 'error');
+                }
+            } catch (error) {
+                console.error('Error cargando simuladores:', error);
+                showNotification('Error de conexiÃ³n', 'error');
+            }
+        }
+
+        function renderSimulatorsAdmin(simulators) {
+            const container = document.getElementById('simulatorListAdmin');
+            if (!container) return;
+            
+            if (!simulators || simulators.length === 0) {
+                container.innerHTML = '<div class="empty-state">No hay simuladores</div>';
+                return;
+            }
+            
+            container.innerHTML = simulators.map(sim => `
+                <div class="simulator-admin-card" data-name="${sim.name}">
+                    <div class="simulator-admin-header">
+                        <div>
+                            <div class="simulator-admin-title">${sim.name}</div>
+                            <div class="simulator-admin-meta">${sim.question_count || 0} preguntas</div>
+                        </div>
+                        <div class="simulator-admin-actions">
+                            <input type="number" min="1" class="form-control simulator-time-input" value="${sim.time_limit || 30}">
+                            <button class="btn btn-primary btn-sm" data-action="save-sim">Guardar</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function createSimulator() {
+            const nameInput = document.getElementById('newSimulatorName');
+            const timeInput = document.getElementById('newSimulatorTime');
+            if (!nameInput || !timeInput) return;
+            
+            const name = nameInput.value.trim();
+            const timeLimit = parseInt(timeInput.value, 10);
+            
+            if (!name) {
+                showNotification('Escribe el nombre del simulador', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/simulators', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name, time_limit: timeLimit })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Simulador guardado', 'success');
+                    nameInput.value = '';
+                    await loadSimulatorsPage();
+                } else {
+                    showNotification(data.error || 'Error al guardar simulador', 'error');
+                }
+            } catch (error) {
+                console.error('Error guardando simulador:', error);
+                showNotification('Error de conexiÃ³n', 'error');
+            }
+        }
+
+        async function handleSimulatorListClick(e) {
+            const btn = e.target.closest('button[data-action="save-sim"]');
+            if (!btn) return;
+            
+            const card = e.target.closest('.simulator-admin-card');
+            if (!card) return;
+            
+            const name = card.dataset.name;
+            const input = card.querySelector('.simulator-time-input');
+            const timeLimit = parseInt(input.value, 10);
+            
+            try {
+                const response = await fetch(`/api/simulators/${encodeURIComponent(name)}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ time_limit: timeLimit })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Tiempo actualizado', 'success');
+                    await loadSimulatorsPage();
+                } else {
+                    showNotification(data.error || 'Error al actualizar', 'error');
+                }
+            } catch (error) {
+                console.error('Error actualizando simulador:', error);
+                showNotification('Error de conexiÃ³n', 'error');
+            }
+        }
         
         async function loadStudySubjects() {
             const container = document.getElementById('subjectButtons');
@@ -1097,12 +1254,18 @@ function displayStudyQuestion(question) {
             document.getElementById('modalNewSubject').style.display = 'none';
             document.getElementById('modalNewSubject').value = '';
             document.getElementById('modalTopic').value = '';
+            document.getElementById('modalTopic').disabled = false;
             document.getElementById('modalQuestion').value = '';
             document.getElementById('modalAnswer').value = '';
             document.getElementById('modalSolution').value = '';
             document.getElementById('modalUniversity').value = 'UNAM';
             document.getElementById('modalNewUniversity').style.display = 'none';
             document.getElementById('modalNewUniversity').value = '';
+            document.getElementById('modalIsSimulator').checked = false;
+            document.getElementById('modalSimulatorName').value = '';
+            document.getElementById('modalSimulatorName').style.display = 'none';
+            document.getElementById('simulatorHint').style.display = 'none';
+            document.getElementById('modalSubject').disabled = false;
              // Limpiar imagen
             document.getElementById('modalImage').value = '';
             document.getElementById('imagePreviewContainer').style.display = 'none';
@@ -1142,6 +1305,9 @@ function displayStudyQuestion(question) {
             document.getElementById('modalQuestion').value = question.question;
             document.getElementById('modalSolution').value = question.solution || '';
             document.getElementById('modalUniversity').value = question.university || 'UNAM';
+            document.getElementById('modalIsSimulator').checked = question.subject === 'Simulador';
+            document.getElementById('modalSimulatorName').value = question.subject === 'Simulador' ? question.topic : '';
+            toggleSimulatorMode();
             
             if (question.has_options && question.options && question.options.length > 0) {
                 document.getElementById('hasOptionsCheckbox').checked = true;
@@ -1174,9 +1340,11 @@ async function saveQuestion() {
     // Obtener valores
     const subject = document.getElementById('modalSubject').value;
     const newSubject = document.getElementById('modalNewSubject').value.trim();
-    const finalSubject = subject === '_new_' && newSubject ? newSubject : subject;
+    let finalSubject = subject === '_new_' && newSubject ? newSubject : subject;
     
-    const topic = document.getElementById('modalTopic').value.trim();
+    let topic = document.getElementById('modalTopic').value.trim();
+    const isSimulator = document.getElementById('modalIsSimulator').checked;
+    const simulatorName = document.getElementById('modalSimulatorName').value.trim();
     const questionText = document.getElementById('modalQuestion').value.trim();
     
     const universitySelect = document.getElementById('modalUniversity').value;
@@ -1184,6 +1352,15 @@ async function saveQuestion() {
     const finalUniversity = universitySelect === '_new_' && newUniversity ? newUniversity : universitySelect;
     
     // Validar
+    if (isSimulator) {
+        if (!simulatorName) {
+            showNotification('El nombre del simulador es requerido', 'error');
+            return;
+        }
+        finalSubject = 'Simulador';
+        topic = simulatorName;
+    }
+    
     if (!finalSubject || !topic || !questionText) {
         showNotification('Por favor completa todos los campos requeridos', 'error');
         return;

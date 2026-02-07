@@ -55,6 +55,10 @@
                 <i class="fas fa-book-open"></i>
                 <span>Modo Estudio</span>
             </div>
+            <div class="menu-item" data-page="simulators">
+                <i class="fas fa-clipboard-check"></i>
+                <span>Simuladores</span>
+            </div>
             <div class="menu-item" id="openModalBtn">
                 <i class="fas fa-plus-circle"></i>
                 <span>Nueva Pregunta</span>
@@ -307,6 +311,44 @@
             </div>
         </div>
         
+        <!-- Página: Simuladores -->
+        <div class="page" id="simulatorsPage">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h2 class="page-title">
+                        <i class="fas fa-clipboard-check"></i> 
+                        Simuladores
+                    </h2>
+                    <p class="page-subtitle">Configura el tiempo fijo de cada simulador</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-outline btn-sm" id="refreshSimulatorsBtn">
+                        <i class="fas fa-sync"></i> Recargar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="simulators-admin">
+                <div class="simulator-create">
+                    <h3><i class="fas fa-plus-circle"></i> Nuevo simulador</h3>
+                    <div class="form-row" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <input type="text" class="form-control" id="newSimulatorName" placeholder="Nombre del simulador">
+                        <input type="number" class="form-control" id="newSimulatorTime" placeholder="Tiempo (min)" min="1" value="30">
+                        <button class="btn btn-primary" id="createSimulatorBtn">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                    </div>
+                    <div class="form-hint">
+                        <i class="fas fa-info-circle"></i> El tiempo es fijo y no lo puede cambiar el alumno.
+                    </div>
+                </div>
+                
+                <div class="simulator-list" id="simulatorListAdmin">
+                    <!-- Simuladores se cargan dinámicamente -->
+                </div>
+            </div>
+        </div>
+
         <!-- Página: Modo Estudio (para que el maestro también pueda estudiar) -->
         <div class="page" id="studyPage">
             <div class="page-header">
@@ -426,6 +468,7 @@
                             <option value="Literatura">Literatura</option>
                             <option value="Inglés">Inglés</option>
                             <option value="_new_">✏️ Otra materia...</option>
+                            <option value="Simulador">Simulador</option>
                         </select>
                         
                         <input type="text" class="form-control" id="bulkNewSubject" 
@@ -556,12 +599,28 @@ Respuesta: B"
                         <option value="Biología">Biología</option>
                         <option value="Historia">Historia</option>
                         <option value="Geografía">Geografía</option>
+                        <option value="Simulador">Simulador</option>
                     </select>
                     <input type="text" class="form-control" id="modalNewSubject" 
                            placeholder="Otra materia" style="flex: 1; display: none;">
                 </div>
                 <div class="form-hint">
                     <i class="fas fa-info-circle"></i> Selecciona una materia existente o escribe una nueva
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-clipboard-check"></i> Simulador (opcional)</label>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <input type="checkbox" id="modalIsSimulator">
+                        Guardar en simulador
+                    </label>
+                    <input type="text" class="form-control" id="modalSimulatorName"
+                           placeholder="Nombre del simulador" style="flex: 1; min-width: 220px; display: none;">
+                </div>
+                <div class="form-hint" id="simulatorHint" style="display: none;">
+                    <i class="fas fa-info-circle"></i> Se guardarÃ¡ con materia "Simulador" y tema con este nombre.
                 </div>
             </div>
                             

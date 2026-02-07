@@ -294,6 +294,61 @@ body {
     background: rgba(255, 255, 255, 0.3);
 }
 
+/* ====== SIMULADORES ====== */
+.simulator-section {
+    margin-top: 1rem;
+}
+
+.simulator-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.simulator-card {
+    background: white;
+    border: 1px solid var(--gray-light);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.simulator-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--primary-light);
+}
+
+.simulator-card.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.simulator-card-title {
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+}
+
+.simulator-card-meta {
+    display: flex;
+    gap: 12px;
+    color: var(--gray);
+    font-size: 0.85rem;
+}
+
+.simulator-info {
+    margin-top: 1rem;
+    background: var(--gray-lighter);
+    border-radius: var(--border-radius);
+    padding: 0.8rem 1rem;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
 /* ====== SELECTOR DE TEMAS ====== */
 .topics-section {
     background: white;

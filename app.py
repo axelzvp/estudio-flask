@@ -13,6 +13,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 MONGO_URI = os.environ.get("MONGO_URI")
+SIMULATOR_SUBJECT = "Simulador"
+DEFAULT_SIMULATOR_TIME = 30
 
 # ========== CONFIGURACIÓN DE LA APLICACIÓN ==========
 app = Flask(__name__)
@@ -29,6 +31,7 @@ client = MongoClient(MONGO_URI)
 db = client['preguntas']
 questions_collection = db['matematicas']
 users_collection = db['usuarios']
+simulators_collection = db['simuladores']
 
 # ========== FUNCIONES HELPER ==========
 # Crear carpeta si no existe
@@ -56,6 +59,18 @@ def jsonify_question(question):
     if question and '_id' in question:
         question['_id'] = str(question['_id'])
     return question
+
+def ensure_simulator(name):
+    if not name or not str(name).strip():
+        return
+    simul = simulators_collection.find_one({'name': name})
+    if not simul:
+        simulators_collection.insert_one({
+            'name': name,
+            'time_limit': DEFAULT_SIMULATOR_TIME,
+            'created_at': datetime.utcnow(),
+            'updated_at': datetime.utcnow()
+        })
 
 # ========== DECORADORES DE AUTENTICACIÓN ==========
 def login_required(f):
@@ -123,6 +138,9 @@ def register_user():
             'created_at': datetime.utcnow()
         }
         
+        if question_doc['subject'] == SIMULATOR_SUBJECT:
+            ensure_simulator(question_doc['topic'])
+
         # Insertar en MongoDB
         result = users_collection.insert_one(user_doc)
         
@@ -343,6 +361,9 @@ def bulk_questions():
                 'success': False,
                 'error': 'El tema es requerido'
             }), 400
+
+        if subject == SIMULATOR_SUBJECT:
+            ensure_simulator(topic)
         
         # Separar en bloques (cada pregunta separada por línea en blanco)
         bloques = texto.strip().split('\n\n')
@@ -500,6 +521,9 @@ def update_question(question_id):
             'updated_at': datetime.utcnow()
         }
         
+        if update_doc['subject'] == SIMULATOR_SUBJECT:
+            ensure_simulator(update_doc['topic'])
+
         # Actualizar en MongoDB
         result = questions_collection.update_one(
             {'_id': ObjectId(question_id)},
@@ -550,10 +574,13 @@ def get_random_question():
     try:
         subject = request.args.get('subject', None)
         topic = request.args.get('topic', None)
+        exclude_simulator = request.args.get('exclude_simulator', 'false').lower() in ['true', '1', 'yes']
         
         query = {}
         if subject and subject.lower() != 'todos':
             query['subject'] = subject
+        elif exclude_simulator:
+            query['subject'] = {'$ne': SIMULATOR_SUBJECT}
         if topic and topic.lower() != 'todos' and topic.lower() != 'all':
             query['topic'] = {'$regex': f'^{topic}$', '$options': 'i'}
         
@@ -632,6 +659,102 @@ def get_topics_by_subject(subject):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/simulators', methods=['GET'])
+def get_simulators():
+    """Obtiene la lista de simuladores disponibles"""
+    try:
+        topic_names = questions_collection.distinct('topic', {'subject': SIMULATOR_SUBJECT})
+        topic_names = [s for s in topic_names if s and str(s).strip() != '']
+        stored_names = simulators_collection.distinct('name')
+        simulator_names = sorted(set(topic_names + stored_names))
+
+        simulators = []
+        for name in simulator_names:
+            simul = simulators_collection.find_one({'name': name})
+            if not simul:
+                ensure_simulator(name)
+                simul = simulators_collection.find_one({'name': name})
+
+            count = questions_collection.count_documents({
+                'subject': SIMULATOR_SUBJECT,
+                'topic': name
+            })
+            simulators.append({
+                'name': name,
+                'time_limit': simul.get('time_limit', DEFAULT_SIMULATOR_TIME) if simul else DEFAULT_SIMULATOR_TIME,
+                'question_count': count
+            })
+        return jsonify({
+            'success': True,
+            'simulators': simulators
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/simulators', methods=['POST'])
+@maestro_required
+def create_or_update_simulator():
+    """Crea o actualiza un simulador"""
+    try:
+        data = request.get_json()
+        name = (data.get('name') or '').strip()
+        time_limit = data.get('time_limit', DEFAULT_SIMULATOR_TIME)
+
+        if not name:
+            return jsonify({'success': False, 'error': 'El nombre del simulador es requerido'}), 400
+
+        simulators_collection.update_one(
+            {'name': name},
+            {'$set': {'time_limit': int(time_limit), 'updated_at': datetime.utcnow()},
+             '$setOnInsert': {'created_at': datetime.utcnow()}},
+            upsert=True
+        )
+
+        return jsonify({'success': True, 'message': 'Simulador guardado'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/simulators/<simulator_name>', methods=['PUT'])
+@maestro_required
+def update_simulator(simulator_name):
+    """Actualiza el tiempo de un simulador"""
+    try:
+        data = request.get_json()
+        time_limit = data.get('time_limit', DEFAULT_SIMULATOR_TIME)
+
+        simulators_collection.update_one(
+            {'name': simulator_name},
+            {'$set': {'time_limit': int(time_limit), 'updated_at': datetime.utcnow()},
+             '$setOnInsert': {'created_at': datetime.utcnow()}},
+            upsert=True
+        )
+
+        return jsonify({'success': True, 'message': 'Simulador actualizado'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/simulators/<simulator_name>/questions', methods=['GET'])
+def get_simulator_questions(simulator_name):
+    """Obtiene las preguntas de un simulador en orden fijo"""
+    try:
+        simul = simulators_collection.find_one({'name': simulator_name})
+        query = {
+            'subject': SIMULATOR_SUBJECT,
+            'topic': {'$regex': f'^{re.escape(simulator_name)}$', '$options': 'i'}
+        }
+        questions = list(questions_collection.find(query).sort('created_at', 1))
+        questions = [jsonify_question(q) for q in questions]
+        
+        return jsonify({
+            'success': True,
+            'count': len(questions),
+            'simulator': simulator_name,
+            'time_limit': simul.get('time_limit', DEFAULT_SIMULATOR_TIME) if simul else DEFAULT_SIMULATOR_TIME,
+            'questions': questions
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
     """Obtiene estadísticas del sistema"""
@@ -698,6 +821,10 @@ def api_info():
             'GET /api/stats': 'Estadísticas',
             'GET /api/subjects': 'Obtener materias disponibles',
             'GET /api/subjects/<subject>/topics': 'Obtener temas por materia',
+            'GET /api/simulators': 'Obtener simuladores disponibles',
+            'GET /api/simulators/<name>/questions': 'Obtener preguntas de un simulador',
+            'POST /api/simulators': 'Crear/actualizar simulador',
+            'PUT /api/simulators/<name>': 'Actualizar simulador',
             'POST /api/register': 'Registrar usuario',
             'POST /api/login': 'Iniciar sesión',
             'POST /api/logout': 'Cerrar sesión',

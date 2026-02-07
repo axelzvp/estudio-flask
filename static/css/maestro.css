@@ -1954,3 +1954,58 @@ textarea.form-control {
 .option-text {
     flex: 1;
 }
+
+/* ====== SIMULADORES (MAESTRO) ====== */
+.simulators-admin {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.simulator-create {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.simulator-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.simulator-admin-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.simulator-admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.simulator-admin-title {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.simulator-admin-meta {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.simulator-admin-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.simulator-time-input {
+    max-width: 140px;
+}
