@@ -468,7 +468,6 @@
                             <option value="Literatura">Literatura</option>
                             <option value="Inglés">Inglés</option>
                             <option value="_new_">✏️ Otra materia...</option>
-                            <option value="Simulador">Simulador</option>
                         </select>
                         
                         <input type="text" class="form-control" id="bulkNewSubject" 
@@ -494,6 +493,21 @@
                     </div>
                 </div>
                 
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label><i class="fas fa-clipboard-check"></i> Simulador (opcional)</label>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                            <input type="checkbox" id="bulkIsSimulator">
+                            Guardar en simulador
+                        </label>
+                        <input type="text" class="form-control" id="bulkSimulatorName"
+                               placeholder="Nombre del simulador" style="flex: 1; min-width: 220px; display: none;">
+                    </div>
+                    <div class="form-hint" id="bulkSimulatorHint" style="display: none;">
+                        <i class="fas fa-info-circle"></i> Se guardará con materia "Simulador" y tema con este nombre.
+                    </div>
+                </div>
+
                 <!-- Área de texto principal -->
                 <div class="form-group">
                     <label><i class="fas fa-paste"></i> Pega las preguntas aquí</label>

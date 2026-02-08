@@ -296,6 +296,34 @@ let existingImageUrl = null;
                 }
             }
         }
+
+        function toggleBulkSimulatorMode() {
+            const simulatorCheckbox = document.getElementById('bulkIsSimulator');
+            const simulatorNameInput = document.getElementById('bulkSimulatorName');
+            const simulatorHint = document.getElementById('bulkSimulatorHint');
+            const subjectSelect = document.getElementById('bulkSubject');
+            const topicInput = document.getElementById('bulkTopic');
+            const newSubjectInput = document.getElementById('bulkNewSubject');
+
+            if (!simulatorCheckbox || !simulatorNameInput || !subjectSelect || !topicInput) return;
+
+            if (simulatorCheckbox.checked) {
+                simulatorNameInput.style.display = 'block';
+                if (simulatorHint) simulatorHint.style.display = 'block';
+                subjectSelect.value = 'Simulador';
+                subjectSelect.disabled = true;
+                topicInput.disabled = true;
+                if (newSubjectInput) newSubjectInput.style.display = 'none';
+            } else {
+                simulatorNameInput.style.display = 'none';
+                if (simulatorHint) simulatorHint.style.display = 'none';
+                subjectSelect.disabled = false;
+                topicInput.disabled = false;
+                if (subjectSelect.value === 'Simulador') {
+                    subjectSelect.value = 'MatemÃ¡ticas';
+                }
+            }
+        }
         
         async function loadAllData() {
             try {
@@ -1588,6 +1616,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('bulkNewSubject').value = '';
         document.getElementById('bulkTopic').value = '';
         document.getElementById('bulkUniversity').value = 'UNAM';
+        document.getElementById('bulkIsSimulator').checked = false;
+        document.getElementById('bulkSimulatorName').value = '';
+        document.getElementById('bulkSimulatorName').style.display = 'none';
+        document.getElementById('bulkSimulatorHint').style.display = 'none';
+        document.getElementById('bulkSubject').disabled = false;
+        document.getElementById('bulkTopic').disabled = false;
         
         // Inicializar evento para materia personalizada
         document.getElementById('bulkSubject').addEventListener('change', function() {
@@ -1599,6 +1633,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 newSubjectInput.style.display = 'none';
             }
         });
+
+        const bulkSimulatorCheckbox = document.getElementById('bulkIsSimulator');
+        if (bulkSimulatorCheckbox) {
+            bulkSimulatorCheckbox.addEventListener('change', toggleBulkSimulatorMode);
+        }
         
         // Evento para análisis en tiempo real
         document.getElementById('bulkText').addEventListener('input', function() {
@@ -1696,9 +1735,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // Obtener valores de los selectores
         let subject = document.getElementById('bulkSubject').value;
         const newSubject = document.getElementById('bulkNewSubject').value.trim();
-        const finalSubject = (subject === '_new_' && newSubject) ? newSubject : subject;
+        let finalSubject = (subject === '_new_' && newSubject) ? newSubject : subject;
         
-        const topic = document.getElementById('bulkTopic').value.trim();
+        let topic = document.getElementById('bulkTopic').value.trim();
+        const isSimulator = document.getElementById('bulkIsSimulator').checked;
+        const simulatorName = document.getElementById('bulkSimulatorName').value.trim();
+        if (isSimulator) {
+            if (!simulatorName) {
+                showNotification('Escribe el nombre del simulador', 'warning');
+                return;
+            }
+            finalSubject = 'Simulador';
+            topic = simulatorName;
+        }
         const university = document.getElementById('bulkUniversity').value;
         
         // Validaciones

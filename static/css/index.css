@@ -44,6 +44,7 @@ body {
     padding: 0.8rem 1rem;
     border-bottom: 1px solid var(--gray-light);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    position: relative;
 }
 
 .logo-container {
@@ -75,6 +76,62 @@ body {
     color: var(--gray);
     font-size: 0.8rem;
     font-weight: 400;
+}
+
+.user-menu {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+}
+
+.user-menu-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--gray-light);
+    background: white;
+    color: var(--dark);
+    padding: 6px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.user-menu-btn:hover {
+    border-color: var(--primary-light);
+    box-shadow: var(--shadow);
+}
+
+.user-menu-dropdown {
+    position: absolute;
+    right: 0;
+    margin-top: 8px;
+    background: white;
+    border: 1px solid var(--gray-light);
+    border-radius: 10px;
+    box-shadow: var(--shadow-hover);
+    padding: 6px;
+    display: none;
+    min-width: 160px;
+    z-index: 10;
+}
+
+.user-menu-dropdown.active {
+    display: block;
+}
+
+.user-menu-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.user-menu-item:hover {
+    background: var(--gray-lighter);
 }
 
 /* ====== CONTENEDOR PRINCIPAL ====== */
@@ -172,6 +229,39 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+}
+
+.exam-subject-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.exam-subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+}
+
+.exam-subject-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid var(--gray-light);
+    border-radius: 10px;
+    padding: 6px 8px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.exam-subject-item:hover {
+    border-color: var(--primary-light);
+    box-shadow: var(--shadow);
+}
+
+.exam-subject-checkbox {
+    accent-color: var(--primary);
 }
 
 .config-item label {
