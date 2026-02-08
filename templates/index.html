@@ -213,7 +213,7 @@
                         <button type="button" class="btn btn-outline btn-sm" id="selectAllSubjectsBtn">Todas</button>
                         <button type="button" class="btn btn-outline btn-sm" id="clearSubjectsBtn">Limpiar</button>
                     </div>
-                    <div class="exam-subjects-grid" id="examSubjectList">
+                    <div class="exam-subjects-list" id="examSubjectList">
                         <!-- Las materias se cargarÃ¡n dinÃ¡micamente -->
                     </div>
                 </div>
@@ -288,7 +288,7 @@
 
                         <h3>Temas de <span id="currentSubjectName" style="color: var(--primary); font-weight: 600;"></span></h3>
 
-                        <p class="topics-subtitle">Filtra por temas especÃ­ficos (opcional)</p>
+                        <p class="topics-subtitle">Filtra por temas especi­ficos (opcional)</p>
 
                     </div>
 
@@ -414,9 +414,7 @@
 
                 <h2><i class="fas fa-trophy"></i> Resultados del Examen</h2>
 
-                <div class="results-score" id="examScore">0%</div>
-
-                <div class="results-grade" id="examGrade">CalificaciÃ³n</div>
+                <div class="results-score" id="examCorrectBox">0/0</div>
 
                 <div id="examTimeUsed">Tiempo utilizado: 00:00</div>
 
@@ -434,12 +432,11 @@
 
                 
 
-                <h3>RevisiÃ³n de preguntas</h3>
+                <h3>Revision de preguntas</h3>
 
                 <div class="results-questions" id="examReviewQuestions">
 
-                    <!-- Preguntas revisadas se cargarÃ¡n aquÃ­ -->
-
+                    <!-- Preguntas revisadas se cargarán aquí -->
                 </div>
 
             </div>
@@ -534,7 +531,7 @@
 
                         <div class="solution-title">
 
-                            <i class="fas fa-list-ol"></i> SoluciÃ³n Detallada
+                            <i class="fas fa-list-ol"></i> Solucion Detallada
 
                         </div>
 
@@ -670,7 +667,7 @@
 
                 console.error('Error cargando preguntas:', error);
 
-                showNotification('Error de conexiÃ³n con el servidor', 'error');
+                showNotification('Error de conexion con el servidor', 'error');
 
             }
         }
@@ -844,27 +841,27 @@
 
             const iconMap = {
 
-                'MatemÃ¡ticas': 'fas fa-calculator',
+                'Matematicas': 'fas fa-calculator',
 
-                'FÃ­sica': 'fas fa-atom',
+                'Física': 'fas fa-atom',
 
-                'QuÃ­mica': 'fas fa-flask',
+                'Quimica': 'fas fa-flask',
 
-                'BiologÃ­a': 'fas fa-dna',
+                'Biologia': 'fas fa-dna',
 
                 'Historia': 'fas fa-landmark',
 
-                'GeografÃ­a': 'fas fa-globe',
+                'Geografia': 'fas fa-globe',
 
                 'Literatura': 'fas fa-book-open',
 
-                'InglÃ©s': 'fas fa-language',
+                'Ingles': 'fas fa-language',
 
-                'ProgramaciÃ³n': 'fas fa-code',
+                'Programacion': 'fas fa-code',
 
-                'EconomÃ­a': 'fas fa-chart-line',
+                'Economia': 'fas fa-chart-line',
 
-                'FilosofÃ­a': 'fas fa-brain',
+                'Filosofia': 'fas fa-brain',
 
                 'Arte': 'fas fa-palette'
 
@@ -1731,7 +1728,7 @@ function checkAnswer(selectedIndex, questionId) {
 
             if (filteredQuestions.length < examConfig.questionCount) {
 
-                showNotification(`Solo hay ${filteredQuestions.length} preguntas disponibles. Se usarÃ¡n todas.`, 'warning');
+                showNotification(`Solo hay ${filteredQuestions.length} preguntas disponibles. Se usaran todas.`, 'warning');
 
                 examConfig.questionCount = filteredQuestions.length;
 
@@ -1739,14 +1736,77 @@ function checkAnswer(selectedIndex, questionId) {
 
             
 
-            // Seleccionar preguntas aleatorias
+            // Seleccionar preguntas aleatorias de forma equilibrada por materia
+
+            const allAvailable = allQuestions.filter(q => !(q.subject && q.subject.toLowerCase() === 'simulador'));
+            const selectedSubjects = (examConfig.subjects && examConfig.subjects.length > 0)
+                ? examConfig.subjects
+                : [...new Set(allAvailable.map(q => q.subject))];
+
+            const subjectPools = {};
+            selectedSubjects.forEach(subject => {
+                subjectPools[subject] = allAvailable.filter(q => q.subject === subject);
+                // shuffle
+                for (let i = subjectPools[subject].length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [subjectPools[subject][i], subjectPools[subject][j]] = [subjectPools[subject][j], subjectPools[subject][i]];
+                }
+            });
 
             examState.questions = [];
+            const usedIds = new Set();
+            const subjectCount = selectedSubjects.length;
+            const base = Math.floor(examConfig.questionCount / subjectCount);
+            let remaining = examConfig.questionCount;
 
-            for (let i = 0; i < examConfig.questionCount; i++) {
-                const randomIndex = Math.floor(Math.random() * filteredQuestions.length);
-                examState.questions.push(filteredQuestions[randomIndex]);
-                filteredQuestions.splice(randomIndex, 1);
+            // Reparto base
+            selectedSubjects.forEach(subject => {
+                const pool = subjectPools[subject] || [];
+                const take = Math.min(base, pool.length);
+                for (let i = 0; i < take; i++) {
+                    const q = pool.pop();
+                    if (q && !usedIds.has(q._id)) {
+                        examState.questions.push(q);
+                        usedIds.add(q._id);
+                        remaining--;
+                    }
+                }
+            });
+
+            // Reparto del resto priorizando materias con preguntas disponibles
+            let round = 0;
+            while (remaining > 0) {
+                let picked = false;
+                for (const subject of selectedSubjects) {
+                    if (remaining === 0) break;
+                    const pool = subjectPools[subject] || [];
+                    if (pool.length > 0) {
+                        const q = pool.pop();
+                        if (q && !usedIds.has(q._id)) {
+                            examState.questions.push(q);
+                            usedIds.add(q._id);
+                            remaining--;
+                            picked = true;
+                        }
+                    }
+                }
+                if (!picked) break;
+                round++;
+                if (round > 1000) break;
+            }
+
+            // Si aún faltan, rellenar con cualquier materia disponible
+            if (remaining > 0) {
+                const leftovers = allAvailable.filter(q => !usedIds.has(q._id));
+                // shuffle leftovers
+                for (let i = leftovers.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [leftovers[i], leftovers[j]] = [leftovers[j], leftovers[i]];
+                }
+                for (let i = 0; i < leftovers.length && remaining > 0; i++) {
+                    examState.questions.push(leftovers[i]);
+                    remaining--;
+                }
             }
             
             // Inicializar estado del examen
@@ -1842,7 +1902,7 @@ function checkAnswer(selectedIndex, questionId) {
 
             if (examConfig.timeLimit === 0) {
 
-                timerElement.textContent = 'Sin lÃ­mite';
+                timerElement.textContent = 'Sin limite';
 
                 return;
 
@@ -2052,7 +2112,7 @@ function showExamQuestion(index) {
 
                         <textarea id="openAnswer${questionIndex}" class="form-control" rows="4" 
 
-                                  placeholder="Escribe tu respuesta aquÃ­...">${examState.answers[questionIndex] || ''}</textarea>
+                                  placeholder="Escribe tu respuesta aqui­...">${examState.answers[questionIndex] || ''}</textarea>
 
                     </div>
 
@@ -2358,12 +2418,6 @@ function showExamQuestion(index) {
 
         function showExamResults(results) {
 
-            // Mostrar puntuaciÃ³n
-
-            document.getElementById('examScore').textContent = `${results.score}%`;
-
-            document.getElementById('examGrade').textContent = results.grade;
-
             document.getElementById('examTimeUsed').textContent = `Tiempo utilizado: ${results.timeUsed}`;
 
             
@@ -2372,33 +2426,12 @@ function showExamQuestion(index) {
 
             const statsContainer = document.getElementById('examStats');
 
-            statsContainer.innerHTML = `
+            statsContainer.innerHTML = '';
 
-                <div class="stat-box">
-
-                    <div class="stat-number">${results.correct}/${results.total}</div>
-
-                    <div class="stat-label">Correctas</div>
-
-                </div>
-
-                <div class="stat-box">
-
-                    <div class="stat-number">${results.total - results.correct}</div>
-
-                    <div class="stat-label">Incorrectas</div>
-
-                </div>
-
-                <div class="stat-box">
-
-                    <div class="stat-number">${results.score}%</div>
-
-                    <div class="stat-label">PuntuaciÃ³n</div>
-
-                </div>
-
-            `;
+            const correctBox = document.getElementById('examCorrectBox');
+            if (correctBox) {
+                correctBox.textContent = `${results.correct}/${results.total}`;
+            }
 
             
 
@@ -2434,7 +2467,7 @@ function showExamQuestion(index) {
 
                         <div><strong>Respuesta correcta:</strong> ${item.correctAnswer}</div>
 
-                        ${item.solution ? `<div style="margin-top: 10px;"><strong>SoluciÃ³n:</strong> ${item.solution}</div>` : ''}
+                        ${item.solution ? `<div style="margin-top: 10px;"><strong>Solucion:</strong> ${item.solution}</div>` : ''}
 
                     </div>
 
@@ -2544,7 +2577,7 @@ function showExamQuestion(index) {
 
                 if (examState.active) {
 
-                    if (!confirm('Â¿EstÃ¡s seguro de que quieres salir del examen? Se perderÃ¡n tus respuestas.')) return;
+                    if (!confirm('Â¿EstÃ¡s seguro de que quieres salir del examen? Se perderan tus respuestas.')) return;
 
                     finishExam();
 
@@ -2564,7 +2597,7 @@ function showExamQuestion(index) {
 
                 e.preventDefault();
 
-                e.returnValue = 'Tienes un examen en progreso. Â¿EstÃ¡s seguro de que quieres salir?';
+                e.returnValue = 'Tienes un examen en progreso. ¿Estas seguro de que quieres salir?';
 
             }
 
@@ -2575,9 +2608,4 @@ function showExamQuestion(index) {
 </body>
 
 </html>
-
-
-
-
-
 

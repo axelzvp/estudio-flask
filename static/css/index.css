@@ -237,30 +237,41 @@ body {
     margin-bottom: 6px;
 }
 
-.exam-subjects-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 8px;
+.exam-subjects-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--gray-light);
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
 }
 
 .exam-subject-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: white;
-    border: 1px solid var(--gray-light);
-    border-radius: 10px;
-    padding: 6px 8px;
+    gap: 10px;
+    padding: 10px 12px;
     cursor: pointer;
     transition: var(--transition);
+    border-bottom: 1px solid var(--gray-light);
+}
+
+.exam-subject-item:last-child {
+    border-bottom: none;
 }
 
 .exam-subject-item:hover {
-    border-color: var(--primary-light);
-    box-shadow: var(--shadow);
+    background: var(--gray-lighter);
+}
+
+.exam-subject-item span {
+    font-weight: 500;
+    color: var(--dark);
 }
 
 .exam-subject-checkbox {
+    width: 18px;
+    height: 18px;
     accent-color: var(--primary);
 }
 
