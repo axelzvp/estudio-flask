@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -137,25 +137,7 @@
                 </div>
             </div>
             
-            <!-- Resumen estadístico -->
-            <div class="stats-summary">
-                <div class="stat-box">
-                    <div class="number" id="totalQuestionsStat">0</div>
-                    <div class="label">Total de Preguntas</div>
-                </div>
-                <div class="stat-box">
-                    <div class="number" id="totalSubjectsStat">0</div>
-                    <div class="label">Materias Diferentes</div>
-                </div>
-                <div class="stat-box">
-                    <div class="number" id="totalShownStat">0</div>
-                    <div class="label">Veces Estudiadas</div>
-                </div>
-                <div class="stat-box">
-                    <div class="number" id="totalCorrectStat">0</div>
-                    <div class="label">Respuestas Correctas</div>
-                </div>
-            </div>
+            <!-- Resumen estadístico (eliminado por solicitud) -->
             
             <!-- Filtros y búsqueda -->
             <div class="filter-container">
@@ -476,8 +458,9 @@
                     
                     <div class="form-group" style="flex: 1;">
                         <label><i class="fas fa-tag"></i> Tema</label>
-                        <input type="text" class="form-control" id="bulkTopic" 
+                        <input type="text" class="form-control" id="bulkTopic" list="bulkTopicList" 
                                placeholder="Ej: Álgebra, Cálculo, Geometría">
+                        <datalist id="bulkTopicList"></datalist>
                     </div>
                     
                     <div class="form-group" style="flex: 1;">
@@ -500,8 +483,9 @@
                             <input type="checkbox" id="bulkIsSimulator">
                             Guardar en simulador
                         </label>
-                        <input type="text" class="form-control" id="bulkSimulatorName"
+                        <input type="text" class="form-control" id="bulkSimulatorName" list="bulkSimulatorList"
                                placeholder="Nombre del simulador" style="flex: 1; min-width: 220px; display: none;">
+                        <datalist id="bulkSimulatorList"></datalist>
                     </div>
                     <div class="form-hint" id="bulkSimulatorHint" style="display: none;">
                         <i class="fas fa-info-circle"></i> Se guardará con materia "Simulador" y tema con este nombre.
@@ -630,8 +614,9 @@ Respuesta: B"
                         <input type="checkbox" id="modalIsSimulator">
                         Guardar en simulador
                     </label>
-                    <input type="text" class="form-control" id="modalSimulatorName"
+                    <input type="text" class="form-control" id="modalSimulatorName" list="modalSimulatorList"
                            placeholder="Nombre del simulador" style="flex: 1; min-width: 220px; display: none;">
+                    <datalist id="modalSimulatorList"></datalist>
                 </div>
                 <div class="form-hint" id="simulatorHint" style="display: none;">
                     <i class="fas fa-info-circle"></i> Se guardarÃ¡ con materia "Simulador" y tema con este nombre.
@@ -640,8 +625,9 @@ Respuesta: B"
                             
             <div class="form-group">
                 <label><i class="fas fa-tag"></i> Tema</label>
-                <input type="text" class="form-control" id="modalTopic" 
+                <input type="text" class="form-control" id="modalTopic" list="modalTopicList" 
                        placeholder="Ej: Álgebra, Cálculo, Geometría">
+                <datalist id="modalTopicList"></datalist>
             </div>
             
             <div class="form-group">
@@ -989,3 +975,6 @@ Respuesta: B"
 
 </body>
 </html>
+
+
+

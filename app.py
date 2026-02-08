@@ -366,7 +366,8 @@ def bulk_questions():
             ensure_simulator(topic)
         
         # Separar en bloques (cada pregunta separada por línea en blanco)
-        bloques = texto.strip().split('\n\n')
+        texto_normalizado = texto.replace('\r\n', '\n').replace('\r', '\n')
+        bloques = re.split(r'\n\s*\n+', texto_normalizado.strip())
         preguntas_insertadas = []
         
         for bloque in bloques:
@@ -717,10 +718,31 @@ def create_or_update_simulator():
 @app.route('/api/simulators/<simulator_name>', methods=['PUT'])
 @maestro_required
 def update_simulator(simulator_name):
-    """Actualiza el tiempo de un simulador"""
+    """Actualiza el tiempo o nombre de un simulador"""
     try:
         data = request.get_json()
         time_limit = data.get('time_limit', DEFAULT_SIMULATOR_TIME)
+        new_name = (data.get('new_name') or '').strip()
+
+        if new_name and new_name != simulator_name:
+            existing = simulators_collection.find_one({'name': new_name})
+            if existing:
+                return jsonify({'success': False, 'error': 'Ya existe un simulador con ese nombre'}), 400
+
+            simulators_collection.update_one(
+                {'name': simulator_name},
+                {'$set': {'name': new_name, 'time_limit': int(time_limit), 'updated_at': datetime.utcnow()},
+                 '$setOnInsert': {'created_at': datetime.utcnow()}},
+                upsert=True
+            )
+
+            # Actualizar preguntas asociadas
+            questions_collection.update_many(
+                {'subject': SIMULATOR_SUBJECT, 'topic': simulator_name},
+                {'$set': {'topic': new_name}}
+            )
+
+            return jsonify({'success': True, 'message': 'Simulador actualizado'})
 
         simulators_collection.update_one(
             {'name': simulator_name},
@@ -730,6 +752,17 @@ def update_simulator(simulator_name):
         )
 
         return jsonify({'success': True, 'message': 'Simulador actualizado'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/simulators/<simulator_name>', methods=['DELETE'])
+@maestro_required
+def delete_simulator(simulator_name):
+    """Elimina un simulador y sus preguntas"""
+    try:
+        simulators_collection.delete_one({'name': simulator_name})
+        questions_collection.delete_many({'subject': SIMULATOR_SUBJECT, 'topic': simulator_name})
+        return jsonify({'success': True, 'message': 'Simulador eliminado'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -825,6 +858,7 @@ def api_info():
             'GET /api/simulators/<name>/questions': 'Obtener preguntas de un simulador',
             'POST /api/simulators': 'Crear/actualizar simulador',
             'PUT /api/simulators/<name>': 'Actualizar simulador',
+            'DELETE /api/simulators/<name>': 'Eliminar simulador',
             'POST /api/register': 'Registrar usuario',
             'POST /api/login': 'Iniciar sesión',
             'POST /api/logout': 'Cerrar sesión',

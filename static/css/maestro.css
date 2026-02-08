@@ -2009,3 +2009,8 @@ textarea.form-control {
 .simulator-time-input {
     max-width: 140px;
 }
+
+.simulator-name-input {
+    max-width: 260px;
+    margin-bottom: 6px;
+}

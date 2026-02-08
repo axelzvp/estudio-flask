@@ -1,4 +1,4 @@
-
+﻿
         let currentUser = null;
         let userRole = null;
         let allQuestions = [];
@@ -166,6 +166,22 @@ let existingImageUrl = null;
                 }
             });
 
+            // Materia en modal (para cargar temas)
+            const modalSubjectSelect = document.getElementById('modalSubject');
+            const modalNewSubjectInput = document.getElementById('modalNewSubject');
+            if (modalSubjectSelect) {
+                modalSubjectSelect.addEventListener('change', function() {
+                    if (this.value === '_new_') {
+                        modalNewSubjectInput.style.display = 'block';
+                        modalNewSubjectInput.focus();
+                        loadModalTopics('');
+                    } else {
+                        modalNewSubjectInput.style.display = 'none';
+                        loadModalTopics(this.value);
+                    }
+                });
+            }
+
             // Simulador en modal
             const simulatorCheckbox = document.getElementById('modalIsSimulator');
             const simulatorNameInput = document.getElementById('modalSimulatorName');
@@ -195,6 +211,9 @@ let existingImageUrl = null;
             if (simulatorList) {
                 simulatorList.addEventListener('click', handleSimulatorListClick);
             }
+
+            // Listas de simuladores para autocompletar en modal y carga masiva
+            loadSimulatorNameOptions();
         }
         
         function initMathToolbars() {
@@ -286,6 +305,7 @@ let existingImageUrl = null;
                 subjectSelect.disabled = true;
                 topicInput.disabled = true;
                 if (newSubjectInput) newSubjectInput.style.display = 'none';
+                loadModalTopics('');
             } else {
                 simulatorNameInput.style.display = 'none';
                 if (simulatorHint) simulatorHint.style.display = 'none';
@@ -294,6 +314,7 @@ let existingImageUrl = null;
                 if (subjectSelect.value === 'Simulador') {
                     subjectSelect.value = 'MatemÃ¡ticas';
                 }
+                loadModalTopics(subjectSelect.value);
             }
         }
 
@@ -314,6 +335,7 @@ let existingImageUrl = null;
                 subjectSelect.disabled = true;
                 topicInput.disabled = true;
                 if (newSubjectInput) newSubjectInput.style.display = 'none';
+                loadBulkTopics('');
             } else {
                 simulatorNameInput.style.display = 'none';
                 if (simulatorHint) simulatorHint.style.display = 'none';
@@ -322,6 +344,53 @@ let existingImageUrl = null;
                 if (subjectSelect.value === 'Simulador') {
                     subjectSelect.value = 'MatemÃ¡ticas';
                 }
+                loadBulkTopics(subjectSelect.value);
+            }
+        }
+
+        async function loadModalTopics(subject) {
+            const list = document.getElementById('modalTopicList');
+            if (!list) return;
+            
+            list.innerHTML = '';
+            if (!subject || subject === 'Simulador' || subject === '_new_') return;
+            
+            try {
+                const response = await fetch(`/api/subjects/${encodeURIComponent(subject)}/topics`);
+                const data = await response.json();
+                if (data.success && Array.isArray(data.topics)) {
+                    data.topics.forEach(topic => {
+                        if (!topic) return;
+                        const option = document.createElement('option');
+                        option.value = topic;
+                        list.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando temas:', error);
+            }
+        }
+
+        async function loadBulkTopics(subject) {
+            const list = document.getElementById('bulkTopicList');
+            if (!list) return;
+            
+            list.innerHTML = '';
+            if (!subject || subject === 'Simulador' || subject === '_new_') return;
+            
+            try {
+                const response = await fetch(`/api/subjects/${encodeURIComponent(subject)}/topics`);
+                const data = await response.json();
+                if (data.success && Array.isArray(data.topics)) {
+                    data.topics.forEach(topic => {
+                        if (!topic) return;
+                        const option = document.createElement('option');
+                        option.value = topic;
+                        list.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando temas:', error);
             }
         }
         
@@ -349,15 +418,24 @@ let existingImageUrl = null;
             const shown = allQuestions.reduce((sum, q) => sum + (q.times_shown || 0), 0);
             const correct = allQuestions.reduce((sum, q) => sum + (q.times_correct || 0), 0);
             
-            document.getElementById('sidebarTotal').textContent = total;
-            document.getElementById('sidebarSubjects').textContent = subjects;
-            document.getElementById('sidebarShown').textContent = shown;
+            const sidebarTotal = document.getElementById('sidebarTotal');
+            const sidebarSubjects = document.getElementById('sidebarSubjects');
+            const sidebarShown = document.getElementById('sidebarShown');
             
-            // Actualizar resumen estadístico
-            document.getElementById('totalQuestionsStat').textContent = total;
-            document.getElementById('totalSubjectsStat').textContent = subjects;
-            document.getElementById('totalShownStat').textContent = shown;
-            document.getElementById('totalCorrectStat').textContent = correct;
+            if (sidebarTotal) sidebarTotal.textContent = total;
+            if (sidebarSubjects) sidebarSubjects.textContent = subjects;
+            if (sidebarShown) sidebarShown.textContent = shown;
+            
+            // Actualizar resumen estadístico si existe en el DOM
+            const totalQuestionsStat = document.getElementById('totalQuestionsStat');
+            const totalSubjectsStat = document.getElementById('totalSubjectsStat');
+            const totalShownStat = document.getElementById('totalShownStat');
+            const totalCorrectStat = document.getElementById('totalCorrectStat');
+            
+            if (totalQuestionsStat) totalQuestionsStat.textContent = total;
+            if (totalSubjectsStat) totalSubjectsStat.textContent = subjects;
+            if (totalShownStat) totalShownStat.textContent = shown;
+            if (totalCorrectStat) totalCorrectStat.textContent = correct;
         }
         
         function updateFilterOptions() {
@@ -871,12 +949,47 @@ function createQuestionCard(question) {
                 
                 if (data.success) {
                     renderSimulatorsAdmin(data.simulators || []);
+                    updateSimulatorNameLists(data.simulators || []);
                 } else {
                     showNotification('Error al cargar simuladores', 'error');
                 }
             } catch (error) {
                 console.error('Error cargando simuladores:', error);
                 showNotification('Error de conexiÃ³n', 'error');
+            }
+        }
+
+        function updateSimulatorNameLists(simulators) {
+            const names = (simulators || [])
+                .map(sim => sim && sim.name ? String(sim.name) : '')
+                .filter(name => name);
+
+            const modalList = document.getElementById('modalSimulatorList');
+            const bulkList = document.getElementById('bulkSimulatorList');
+
+            setDatalistOptions(modalList, names);
+            setDatalistOptions(bulkList, names);
+        }
+
+        function setDatalistOptions(listEl, values) {
+            if (!listEl) return;
+            listEl.innerHTML = '';
+            values.forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                listEl.appendChild(option);
+            });
+        }
+
+        async function loadSimulatorNameOptions() {
+            try {
+                const response = await fetch('/api/simulators');
+                const data = await response.json();
+                if (data.success) {
+                    updateSimulatorNameLists(data.simulators || []);
+                }
+            } catch (error) {
+                console.error('Error cargando simuladores:', error);
             }
         }
 
@@ -893,12 +1006,13 @@ function createQuestionCard(question) {
                 <div class="simulator-admin-card" data-name="${sim.name}">
                     <div class="simulator-admin-header">
                         <div>
-                            <div class="simulator-admin-title">${sim.name}</div>
+                            <input type="text" class="form-control simulator-name-input" value="${sim.name}">
                             <div class="simulator-admin-meta">${sim.question_count || 0} preguntas</div>
                         </div>
                         <div class="simulator-admin-actions">
                             <input type="number" min="1" class="form-control simulator-time-input" value="${sim.time_limit || 30}">
                             <button class="btn btn-primary btn-sm" data-action="save-sim">Guardar</button>
+                            <button class="btn btn-danger btn-sm" data-action="delete-sim">Eliminar</button>
                         </div>
                     </div>
                 </div>
@@ -940,21 +1054,43 @@ function createQuestionCard(question) {
         }
 
         async function handleSimulatorListClick(e) {
-            const btn = e.target.closest('button[data-action="save-sim"]');
-            if (!btn) return;
+            const saveBtn = e.target.closest('button[data-action="save-sim"]');
+            const deleteBtn = e.target.closest('button[data-action="delete-sim"]');
+            if (!saveBtn && !deleteBtn) return;
             
             const card = e.target.closest('.simulator-admin-card');
             if (!card) return;
             
             const name = card.dataset.name;
+            const nameInput = card.querySelector('.simulator-name-input');
             const input = card.querySelector('.simulator-time-input');
             const timeLimit = parseInt(input.value, 10);
+
+            if (deleteBtn) {
+                if (!confirm(`¿Eliminar simulador "${name}"? Esto borrará sus preguntas.`)) return;
+                try {
+                    const response = await fetch(`/api/simulators/${encodeURIComponent(name)}`, {
+                        method: 'DELETE'
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showNotification('Simulador eliminado', 'success');
+                        await loadSimulatorsPage();
+                    } else {
+                        showNotification(data.error || 'Error al eliminar', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error eliminando simulador:', error);
+                    showNotification('Error de conexión', 'error');
+                }
+                return;
+            }
             
             try {
                 const response = await fetch(`/api/simulators/${encodeURIComponent(name)}`, {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ time_limit: timeLimit })
+                    body: JSON.stringify({ time_limit: timeLimit, new_name: nameInput ? nameInput.value.trim() : '' })
                 });
                 const data = await response.json();
                 
@@ -1283,6 +1419,7 @@ function displayStudyQuestion(question) {
             document.getElementById('modalNewSubject').value = '';
             document.getElementById('modalTopic').value = '';
             document.getElementById('modalTopic').disabled = false;
+            loadModalTopics('Matemáticas');
             document.getElementById('modalQuestion').value = '';
             document.getElementById('modalAnswer').value = '';
             document.getElementById('modalSolution').value = '';
@@ -1330,6 +1467,7 @@ function displayStudyQuestion(question) {
             
             document.getElementById('modalSubject').value = question.subject;
             document.getElementById('modalTopic').value = question.topic;
+            loadModalTopics(question.subject);
             document.getElementById('modalQuestion').value = question.question;
             document.getElementById('modalSolution').value = question.solution || '';
             document.getElementById('modalUniversity').value = question.university || 'UNAM';
@@ -1629,8 +1767,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.value === '_new_') {
                 newSubjectInput.style.display = 'block';
                 newSubjectInput.focus();
+                loadBulkTopics('');
             } else {
                 newSubjectInput.style.display = 'none';
+                loadBulkTopics(this.value);
             }
         });
 
@@ -2242,3 +2382,7 @@ function closeExpandedImage() {
     }
     document.removeEventListener('keydown', handleEscKey);
 }
+
+
+
+
