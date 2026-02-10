@@ -1039,6 +1039,7 @@
                     <div class="simulator-card-meta">
                         <span><i class="fas fa-list-ol"></i> ${sim.question_count || 0} preguntas</span>
                         <span><i class="fas fa-clock"></i> ${sim.time_limit || 0} min</span>
+                        <span><i class="fas fa-star"></i> ${sim.last_score ? `${sim.last_score.correct}/${sim.last_score.total}` : 'Sin puntaje'}</span>
                     </div>
                 `;
                 card.addEventListener('click', function() {
@@ -2292,6 +2293,22 @@ function showExamQuestion(index) {
             const results = calculateExamResults();
 
             showExamResults(results);
+
+            if (currentMode === 'simulator' && selectedSimulator) {
+                fetch(`/api/simulators/${encodeURIComponent(selectedSimulator.name)}/score`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correct: results.correct, total: results.total })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        selectedSimulator.last_score = { correct: results.correct, total: results.total };
+                        renderSimulators();
+                    }
+                })
+                .catch(err => console.log('Error guardando puntaje:', err));
+            }
 
             
 

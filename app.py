@@ -34,6 +34,7 @@ db = client['preguntas']
 questions_collection = db['matematicas']
 users_collection = db['usuarios']
 simulators_collection = db['simuladores']
+simulator_scores_collection = db['simulator_scores']
 
 # ========== FUNCIONES HELPER ==========
 # Crear carpeta si no existe
@@ -738,6 +739,18 @@ def get_topics_by_subject(subject):
 def get_simulators():
     """Obtiene la lista de simuladores disponibles"""
     try:
+        user_scores = {}
+        if 'user_id' in session:
+            user_scores_cursor = simulator_scores_collection.find(
+                {'user_id': session['user_id']},
+                {'simulator': 1, 'correct': 1, 'total': 1}
+            )
+            for doc in user_scores_cursor:
+                user_scores[doc.get('simulator')] = {
+                    'correct': doc.get('correct', 0),
+                    'total': doc.get('total', 0)
+                }
+
         topic_names = questions_collection.distinct('topic', {'subject': SIMULATOR_SUBJECT})
         topic_names = [s for s in topic_names if s and str(s).strip() != '']
         stored_names = simulators_collection.distinct('name')
@@ -757,7 +770,8 @@ def get_simulators():
             simulators.append({
                 'name': name,
                 'time_limit': simul.get('time_limit', DEFAULT_SIMULATOR_TIME) if simul else DEFAULT_SIMULATOR_TIME,
-                'question_count': count
+                'question_count': count,
+                'last_score': user_scores.get(name)
             })
         return jsonify({
             'success': True,
@@ -815,6 +829,10 @@ def update_simulator(simulator_name):
                 {'subject': SIMULATOR_SUBJECT, 'topic': simulator_name},
                 {'$set': {'topic': new_name}}
             )
+            simulator_scores_collection.update_many(
+                {'simulator': simulator_name},
+                {'$set': {'simulator': new_name}}
+            )
 
             return jsonify({'success': True, 'message': 'Simulador actualizado'})
 
@@ -836,7 +854,34 @@ def delete_simulator(simulator_name):
     try:
         simulators_collection.delete_one({'name': simulator_name})
         questions_collection.delete_many({'subject': SIMULATOR_SUBJECT, 'topic': simulator_name})
+        simulator_scores_collection.delete_many({'simulator': simulator_name})
         return jsonify({'success': True, 'message': 'Simulador eliminado'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/simulators/<simulator_name>/score', methods=['POST'])
+@login_required
+def save_simulator_score(simulator_name):
+    """Guarda el último puntaje del usuario en un simulador"""
+    try:
+        data = request.get_json() or {}
+        correct = int(data.get('correct', 0))
+        total = int(data.get('total', 0))
+
+        if total < 0 or correct < 0 or correct > total:
+            return jsonify({'success': False, 'error': 'Puntaje inválido'}), 400
+
+        simulator_scores_collection.update_one(
+            {'user_id': session['user_id'], 'simulator': simulator_name},
+            {'$set': {
+                'correct': correct,
+                'total': total,
+                'updated_at': datetime.utcnow()
+            }},
+            upsert=True
+        )
+
+        return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -933,6 +978,7 @@ def api_info():
             'POST /api/simulators': 'Crear/actualizar simulador',
             'PUT /api/simulators/<name>': 'Actualizar simulador',
             'DELETE /api/simulators/<name>': 'Eliminar simulador',
+            'POST /api/simulators/<name>/score': 'Guardar puntaje del usuario en simulador',
             'POST /api/register': 'Registrar usuario',
             'POST /api/login': 'Iniciar sesión',
             'POST /api/logout': 'Cerrar sesión',
