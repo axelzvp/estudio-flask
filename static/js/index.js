@@ -187,9 +187,20 @@
             document.getElementById('modalQuestionSubject').textContent = question.subject;
             document.getElementById('modalQuestionTopic').textContent = question.topic;
             document.getElementById('modalQuestionUniversity').textContent = question.university || 'General';
-            document.getElementById('modalQuestionText').innerHTML = question.question;
-            
+            const questionTextEl = document.getElementById('modalQuestionText');
             const optionsContainer = document.getElementById('modalOptionsContainer');
+            const answerTextEl = document.getElementById('modalAnswerText');
+            const solutionTextEl = document.getElementById('modalSolutionText');
+
+            [questionTextEl, optionsContainer, answerTextEl, solutionTextEl].forEach(el => {
+                if (el) el.style.visibility = 'hidden';
+            });
+            if (optionsContainer) {
+                optionsContainer.style.display = 'none';
+            }
+
+            questionTextEl.innerHTML = question.question;
+            
             optionsContainer.innerHTML = '';
             
             if (question.has_options && question.options && question.options.length > 0) {
@@ -208,15 +219,34 @@
                 optionsContainer.innerHTML = optionsHTML;
             }
             
-            document.getElementById('modalAnswerText').innerHTML = question.answer || question.correct_answer || '';
-            document.getElementById('modalSolutionText').innerHTML = question.solution || '';
+            answerTextEl.innerHTML = question.answer || question.correct_answer || '';
+            solutionTextEl.innerHTML = question.solution || '';
             document.getElementById('modalAnswerSection').style.display = 'none';
             
             document.getElementById('studyQuestionModal').style.display = 'flex';
             
             if (window.MathJax) {
                 MathJax.typesetPromise()
-                    .catch(err => console.log('MathJax error:', err));
+                    .catch(err => console.log('MathJax error:', err))
+                    .finally(() => {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            [questionTextEl, optionsContainer, answerTextEl, solutionTextEl].forEach(el => {
+                                if (el) el.style.visibility = '';
+                            });
+                            if (optionsContainer) {
+                                optionsContainer.style.display = '';
+                            }
+                        });
+                    });
+                });
+            } else {
+                [questionTextEl, optionsContainer, answerTextEl, solutionTextEl].forEach(el => {
+                    if (el) el.style.visibility = '';
+                });
+                if (optionsContainer) {
+                    optionsContainer.style.display = '';
+                }
             }
         }
         

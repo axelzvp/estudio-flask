@@ -1327,6 +1327,16 @@ function displayStudyQuestion(question) {
     document.getElementById('modalQuestionSubject').textContent = question.subject;
     document.getElementById('modalQuestionTopic').textContent = question.topic;
     document.getElementById('modalQuestionUniversity').textContent = question.university || 'General';
+
+    const questionTextEl = document.getElementById('modalQuestionText');
+    const optionsContainer = document.getElementById('modalOptionsContainer');
+    const answerTextEl = document.getElementById('modalAnswerText');
+    const solutionTextEl = document.getElementById('modalSolutionText');
+
+    // Ocultar contenido mientras MathJax renderiza
+    [questionTextEl, optionsContainer, answerTextEl, solutionTextEl].forEach(el => {
+        if (el) el.style.visibility = 'hidden';
+    });
     
     // Crear contenido de pregunta
     let questionHTML = question.question;
@@ -1345,10 +1355,9 @@ function displayStudyQuestion(question) {
         `;
     }
     
-    document.getElementById('modalQuestionText').innerHTML = questionHTML;
+    questionTextEl.innerHTML = questionHTML;
     
     // Actualizar opciones
-    const optionsContainer = document.getElementById('modalOptionsContainer');
     optionsContainer.innerHTML = '';
     
     if (question.has_options && question.options && question.options.length > 0) {
@@ -1370,12 +1379,12 @@ function displayStudyQuestion(question) {
     }
     
     // Actualizar respuesta y solución
-    document.getElementById('modalAnswerText').innerHTML = question.answer || question.correct_answer || '';
+    answerTextEl.innerHTML = question.answer || question.correct_answer || '';
     
     // Mostrar solución si existe
     const solutionContainer = document.getElementById('solutionContainer');
     if (question.solution && question.solution.trim() !== '') {
-        document.getElementById('modalSolutionText').innerHTML = question.solution;
+        solutionTextEl.innerHTML = question.solution;
         if (solutionContainer) {
             solutionContainer.style.display = 'block';
         }
@@ -1393,8 +1402,17 @@ function displayStudyQuestion(question) {
     if (window.MathJax) {
         setTimeout(() => {
             MathJax.typesetPromise()
-                .catch(err => console.log('MathJax error:', err));
+                .catch(err => console.log('MathJax error:', err))
+                .finally(() => {
+                    [questionTextEl, optionsContainer, answerTextEl, solutionTextEl].forEach(el => {
+                        if (el) el.style.visibility = '';
+                    });
+                });
         }, 100);
+    } else {
+        [questionTextEl, optionsContainer, answerTextEl, solutionTextEl].forEach(el => {
+            if (el) el.style.visibility = '';
+        });
     }
 }
         

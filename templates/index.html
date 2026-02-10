@@ -1339,6 +1339,18 @@ function displayStudyQuestion(question) {
 
     document.getElementById('universityText').textContent = question.university || 'General';
 
+    const questionTextEl = document.getElementById('modalQuestionText');
+    const optionsContainer = document.getElementById('modalOptionsContainer');
+    const answerTextEl = document.getElementById('modalAnswerText');
+    const solutionTextEl = document.getElementById('modalSolutionText');
+
+    [questionTextEl, optionsContainer, answerTextEl, solutionTextEl].forEach(el => {
+        if (el) el.style.visibility = 'hidden';
+    });
+    if (optionsContainer) {
+        optionsContainer.style.display = 'none';
+    }
+
     
 
     // Actualizar pregunta
@@ -1373,15 +1385,13 @@ function displayStudyQuestion(question) {
 
     
 
-    document.getElementById('modalQuestionText').innerHTML = questionHTML;
+    questionTextEl.innerHTML = questionHTML;
 
     
 
     // Resto del cÃ³digo sigue igual...
 
     // Actualizar opciones
-
-    const optionsContainer = document.getElementById('modalOptionsContainer');
 
     optionsContainer.innerHTML = '';
 
@@ -1425,7 +1435,7 @@ function displayStudyQuestion(question) {
 
     // Actualizar respuesta y soluciÃ³n
 
-    document.getElementById('modalAnswerText').innerHTML = question.answer || question.correct_answer || '';
+    answerTextEl.innerHTML = question.answer || question.correct_answer || '';
 
     
 
@@ -1433,7 +1443,7 @@ function displayStudyQuestion(question) {
 
     if (question.solution && question.solution.trim() !== '') {
 
-        document.getElementById('modalSolutionText').innerHTML = question.solution;
+        solutionTextEl.innerHTML = question.solution;
 
         solutionContainer.style.display = 'block';
 
@@ -1457,32 +1467,30 @@ function displayStudyQuestion(question) {
 
     
 
-    // Asegurar que las imÃ¡genes se carguen bien - CORREGIDO
-
-    setTimeout(() => {
-
-        MathJax.typesetPromise().catch(console.error);
-
-        // Las imÃ¡genes se cargarÃ¡n automÃ¡ticamente
-
-    }, 100);
-
-
-
-    
-
-    // Actualizar MathJax
-
     if (window.MathJax) {
-
         setTimeout(() => {
-
             MathJax.typesetPromise()
-
-                .catch(err => console.log('MathJax error:', err));
-
+                .catch(err => console.log('MathJax error:', err))
+                .finally(() => {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            [questionTextEl, optionsContainer, answerTextEl, solutionTextEl].forEach(el => {
+                                if (el) el.style.visibility = '';
+                            });
+                            if (optionsContainer) {
+                                optionsContainer.style.display = '';
+                            }
+                        });
+                    });
+                });
         }, 100);
-
+    } else {
+        [questionTextEl, optionsContainer, answerTextEl, solutionTextEl].forEach(el => {
+            if (el) el.style.visibility = '';
+        });
+        if (optionsContainer) {
+            optionsContainer.style.display = '';
+        }
     }
 
 }
@@ -2607,4 +2615,3 @@ function showExamQuestion(index) {
 </body>
 
 </html>
-
