@@ -200,6 +200,18 @@
             }
 
             questionTextEl.innerHTML = question.question;
+
+            const imagesReady = (() => {
+                const imgs = Array.from(questionTextEl.querySelectorAll('img'));
+                if (imgs.length === 0) return Promise.resolve();
+                return Promise.race([
+                    Promise.all(imgs.map(img => img.complete ? Promise.resolve() : new Promise(res => {
+                        img.addEventListener('load', res, { once: true });
+                        img.addEventListener('error', res, { once: true });
+                    }))),
+                    new Promise(res => setTimeout(res, 1500))
+                ]);
+            })();
             
             optionsContainer.innerHTML = '';
             
@@ -226,9 +238,10 @@
             document.getElementById('studyQuestionModal').style.display = 'flex';
             
             if (window.MathJax) {
-                MathJax.typesetPromise()
-                    .catch(err => console.log('MathJax error:', err))
-                    .finally(() => {
+                Promise.all([
+                    MathJax.typesetPromise().catch(err => console.log('MathJax error:', err)),
+                    imagesReady
+                ]).finally(() => {
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
                             [questionTextEl, optionsContainer, answerTextEl, solutionTextEl].forEach(el => {
@@ -241,12 +254,14 @@
                     });
                 });
             } else {
-                [questionTextEl, optionsContainer, answerTextEl, solutionTextEl].forEach(el => {
-                    if (el) el.style.visibility = '';
+                imagesReady.finally(() => {
+                    [questionTextEl, optionsContainer, answerTextEl, solutionTextEl].forEach(el => {
+                        if (el) el.style.visibility = '';
+                    });
+                    if (optionsContainer) {
+                        optionsContainer.style.display = '';
+                    }
                 });
-                if (optionsContainer) {
-                    optionsContainer.style.display = '';
-                }
             }
         }
         
