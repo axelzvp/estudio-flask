@@ -695,6 +695,7 @@ body {
     padding-bottom: calc(90px + var(--safe-bottom));
 }
 
+/* ====== CONTENIDO DE PREGUNTAS - MODIFICADO ====== */
 .question-content {
     font-size: 0.95rem;
     line-height: 1.5;
@@ -703,6 +704,40 @@ body {
     background: var(--light);
     border-radius: 6px;
     border-left: 3px solid var(--primary);
+    /* Evita espacios en blanco por indentación HTML */
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    overflow: hidden;
+    /* Elimina márgenes/paddings internos excesivos */
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+/* Contenido específico del texto de la pregunta */
+.question-text-content {
+    display: block;
+    white-space: pre-line;
+    line-height: 1.6;
+    overflow-wrap: break-word;
+    /* Elimina espacios en blanco al inicio/final */
+    text-overflow: ellipsis;
+}
+
+/* Elimina márgenes excesivos en elementos hijos */
+.question-content * {
+    margin-top: 0.3rem;
+    margin-bottom: 0.3rem;
+}
+
+.question-content *:first-child {
+    margin-top: 0;
+}
+
+.question-content *:last-child {
+    margin-bottom: 0;
 }
 
 /* Opciones */
@@ -1009,7 +1044,42 @@ body {
     background: var(--light);
     border-radius: 6px;
     border-left: 3px solid var(--primary);
+    /* Evita espacios en blanco por indentación HTML */
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    overflow: hidden;
+    /* Elimina márgenes/paddings internos excesivos */
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    position: relative;
 }
+
+/* Clase específica para texto en simulador */
+.exam-question-text {
+    display: block;
+    white-space: pre-line;
+    line-height: 1.6;
+    overflow-wrap: break-word;
+    /* Elimina espacios en blanco al inicio/final */
+    text-overflow: ellipsis;
+}
+
+.exam-question-content * {
+    margin-top: 0.3rem;
+    margin-bottom: 0.3rem;
+}
+
+.exam-question-content *:first-child {
+    margin-top: 0;
+}
+
+.exam-question-content *:last-child {
+    margin-bottom: 0;
+}
+
 
 .exam-options-container {
     display: grid;
@@ -1062,6 +1132,8 @@ body {
     flex: 1;
     font-size: 0.9rem;
     line-height: 1.4;
+    white-space: pre-line;
+    overflow-wrap: break-word;
 }
 
 .exam-footer {
@@ -1308,7 +1380,7 @@ body {
 /* ====== ESTILOS PARA IMÁGENES ====== */
 .question-image-container {
     text-align: center;
-    margin: 20px 0;
+    margin: 15px 0;
     padding: 15px;
     background: #f8fafc;
     border-radius: 12px;
@@ -1470,6 +1542,34 @@ body {
     object-fit: contain;
     background: white;
     padding: 4px;
+}
+
+/* Ajustes de imagen dentro del examen/simulador */
+.exam-question-content img {
+    max-width: 100%;
+    max-height: 350px;
+    height: auto;
+    border-radius: 8px;
+    margin: 12px auto !important;
+    display: block;
+    border: 1px solid var(--gray-light);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    object-fit: contain;
+    background: white;
+    padding: 4px;
+}
+
+.exam-option-content img {
+    max-width: 90%;
+    max-height: 150px;
+    height: auto;
+    margin: 8px auto !important;
+    display: block;
+    border-radius: 6px;
+    border: 1px solid var(--gray-light);
+    object-fit: contain;
+    background: white;
+    padding: 3px;
 }
 
 /* ====== RESPONSIVE - MÓVIL (Del index.css) ====== */
