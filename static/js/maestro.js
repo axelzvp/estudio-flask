@@ -128,6 +128,7 @@ let existingImageUrl = null;
             
             // Teclados matemáticos - Inicializar
             initMathToolbars();
+            initPix2TextUploader();
             
             // Filtros
             document.getElementById('subjectFilter').addEventListener('change', function() {
@@ -257,6 +258,71 @@ let existingImageUrl = null;
             
             // Disparar evento de cambio para actualizar MathJax si es necesario
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        function setPix2TextStatus(message) {
+            const statusEl = document.getElementById('pix2textStatus');
+            if (!statusEl) return;
+            statusEl.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+        }
+
+        function initPix2TextUploader() {
+            const fileInput = document.getElementById('pix2textImage');
+            const convertBtn = document.getElementById('pix2textBtn');
+            if (!fileInput || !convertBtn) return;
+
+            convertBtn.addEventListener('click', async function() {
+                if (!fileInput.files || !fileInput.files[0]) {
+                    showNotification('Selecciona una imagen de la fórmula', 'warning');
+                    return;
+                }
+
+                const questionTextarea = document.getElementById('modalQuestion');
+                if (!questionTextarea) return;
+
+                const formData = new FormData();
+                formData.append('image', fileInput.files[0]);
+
+                convertBtn.disabled = true;
+                setPix2TextStatus('Procesando imagen...');
+
+                try {
+                    const response = await fetch('/api/pix2text', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        setPix2TextStatus(data.error || 'No se pudo convertir la imagen.');
+                        showNotification(data.error || 'Error al convertir la imagen', 'error');
+                        return;
+                    }
+
+                    const latexRaw = (data.latex || '').trim();
+                    if (!latexRaw) {
+                        setPix2TextStatus('No se detectó LaTeX en la imagen.');
+                        showNotification('No se detectó LaTeX en la imagen', 'warning');
+                        return;
+                    }
+
+                    let latexToInsert = latexRaw;
+                    if (!(latexRaw.startsWith('$$') && latexRaw.endsWith('$$'))) {
+                        latexToInsert = `$$${latexRaw}$$`;
+                    }
+
+                    insertSymbolAtCursor(questionTextarea, latexToInsert);
+                    showNotification('LaTeX insertado en la pregunta', 'success');
+                    setPix2TextStatus('LaTeX insertado en la pregunta.');
+                    fileInput.value = '';
+                } catch (error) {
+                    console.error('Pix2Text error:', error);
+                    setPix2TextStatus('Error de conexión con el servidor.');
+                    showNotification('Error de conexión', 'error');
+                } finally {
+                    convertBtn.disabled = false;
+                }
+            });
         }
         
         function handleOptionFocus(event) {
@@ -1435,6 +1501,9 @@ function displayStudyQuestion(question) {
             document.getElementById('modalImage').value = '';
             document.getElementById('imagePreviewContainer').style.display = 'none';
             document.getElementById('previewImage').src = '';
+            const pix2TextInput = document.getElementById('pix2textImage');
+            if (pix2TextInput) pix2TextInput.value = '';
+            setPix2TextStatus('Sube una imagen con la fórmula y se insertará en la pregunta como $$...$$');
             
             if (document.getElementById('hasOptionsCheckbox')) {
                 document.getElementById('hasOptionsCheckbox').checked = false;

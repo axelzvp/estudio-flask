@@ -681,6 +681,19 @@ Respuesta: B"
                 <textarea class="form-control" id="modalQuestion" 
                           placeholder="Escribe tu pregunta... (usa los botones arriba para símbolos)" 
                           rows="4"></textarea>
+
+                <div class="form-group" id="pix2textGroup" style="margin-top: 12px;">
+                    <label><i class="fas fa-robot"></i> Fórmula desde imagen (Pix2Text)</label>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="file" class="form-control" id="pix2textImage" accept="image/*" style="flex: 1; min-width: 220px;">
+                        <button type="button" class="btn btn-outline btn-sm" id="pix2textBtn">
+                            <i class="fas fa-magic"></i> Convertir a LaTeX
+                        </button>
+                    </div>
+                    <div class="form-hint" id="pix2textStatus">
+                        <i class="fas fa-info-circle"></i> Sube una imagen con la fórmula y se insertará en la pregunta como $$...$$
+                    </div>
+                </div>
                 
                 <div class="form-group" style="margin-top: 15px;">
                     <label><i class="fas fa-image"></i> Imagen (opcional)</label>

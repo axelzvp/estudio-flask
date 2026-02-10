@@ -9,12 +9,14 @@ from werkzeug.utils import secure_filename
 import random
 import hashlib
 import os
+import tempfile
 from dotenv import load_dotenv
 
 load_dotenv()
 MONGO_URI = os.environ.get("MONGO_URI")
 SIMULATOR_SUBJECT = "Simulador"
 DEFAULT_SIMULATOR_TIME = 30
+_pix2text_instance = None
 
 # ========== CONFIGURACIÓN DE LA APLICACIÓN ==========
 app = Flask(__name__)
@@ -71,6 +73,33 @@ def ensure_simulator(name):
             'created_at': datetime.utcnow(),
             'updated_at': datetime.utcnow()
         })
+
+def get_pix2text():
+    global _pix2text_instance
+    if _pix2text_instance is None:
+        try:
+            from pix2text import Pix2Text
+        except Exception as exc:
+            raise RuntimeError(
+                "Pix2Text no está instalado. Agrega 'pix2text' a requirements.txt y ejecuta pip install -r requirements.txt"
+            ) from exc
+        _pix2text_instance = Pix2Text()
+    return _pix2text_instance
+
+def normalize_pix2text_output(result):
+    if isinstance(result, str):
+        return result
+    if isinstance(result, dict):
+        return result.get('text') or result.get('latex') or str(result)
+    if isinstance(result, list):
+        parts = []
+        for item in result:
+            if isinstance(item, dict):
+                parts.append(item.get('text') or item.get('latex') or '')
+            else:
+                parts.append(str(item))
+        return ''.join(parts)
+    return str(result)
 
 # ========== DECORADORES DE AUTENTICACIÓN ==========
 def login_required(f):
@@ -333,6 +362,51 @@ def create_question():
             'question': question_doc
         }), 201
 
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/pix2text', methods=['POST'])
+@maestro_required
+def pix2text_to_latex():
+    try:
+        image_file = request.files.get('image')
+        if not image_file or image_file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'La imagen es requerida'
+            }), 400
+
+        if not allowed_file(image_file.filename):
+            return jsonify({
+                'success': False,
+                'error': 'Tipo de archivo no permitido. Use PNG, JPG, JPEG, GIF, BMP o SVG'
+            }), 400
+
+        _, ext = os.path.splitext(secure_filename(image_file.filename))
+        suffix = ext.lower() if ext else '.png'
+        temp_path = None
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            image_file.save(tmp.name)
+            temp_path = tmp.name
+
+        try:
+            p2t = get_pix2text()
+            latex = normalize_pix2text_output(p2t.recognize_formula(temp_path))
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                os.remove(temp_path)
+
+        if not latex or not str(latex).strip():
+            return jsonify({
+                'success': False,
+                'error': 'No se detectó una fórmula válida en la imagen'
+            }), 400
+
+        return jsonify({
+            'success': True,
+            'latex': str(latex).strip()
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
