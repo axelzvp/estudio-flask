@@ -79,9 +79,16 @@ body {
 }
 
 .user-menu {
+    position: relative;
+}
+
+.header-actions {
     position: absolute;
     top: 12px;
     right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .user-menu-btn {
@@ -1542,6 +1549,38 @@ body {
     object-fit: contain;
     background: white;
     padding: 4px;
+}
+
+.sim-results-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--gray-light);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.sim-results-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 640px;
+}
+
+.sim-results-table th,
+.sim-results-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--gray-light);
+    text-align: left;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.sim-results-table th {
+    background: #f8fafc;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.sim-results-table tbody tr:nth-child(odd) {
+    background: #fcfdff;
 }
 
 /* Ajustes de imagen dentro del examen/simulador */

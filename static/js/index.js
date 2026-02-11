@@ -146,6 +146,10 @@
 
             // Simuladores
             document.getElementById('startSimulatorBtn').addEventListener('click', startSimulatorExam);
+            const viewSimulatorResultsBtn = document.getElementById('viewSimulatorResultsBtn');
+            if (viewSimulatorResultsBtn) {
+                viewSimulatorResultsBtn.addEventListener('click', viewSimulatorResults);
+            }
 
             // Usuario / menú
             setupUserMenu();
@@ -171,6 +175,15 @@
             } else if (mode === 'simulator') {
                 renderSimulators();
             }
+            updateSimulatorResultsButtonVisibility();
+        }
+
+        function updateSimulatorResultsButtonVisibility() {
+            const btn = document.getElementById('viewSimulatorResultsBtn');
+            if (!btn) return;
+            const hasAnyAttempt = Array.isArray(allSimulators) && allSimulators.some(sim => sim && sim.last_score);
+            const shouldShow = hasAnyAttempt;
+            btn.style.display = shouldShow ? 'inline-flex' : 'none';
         }
 
         function setupUserMenu() {
@@ -440,6 +453,33 @@
             }
         }
 
+        function formatCompactDateTime(value) {
+            if (!value) return null;
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return null;
+            const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+            const day = date.getDate();
+            const month = months[date.getMonth()];
+            let hour = date.getHours();
+            const suffix = hour >= 12 ? 'pm' : 'am';
+            hour = hour % 12 || 12;
+            const minute = String(date.getMinutes()).padStart(2, '0');
+            return `${day}/${month} ${hour}:${minute} ${suffix}`;
+        }
+
+        function formatSimulatorWindow(sim) {
+            const from = sim && sim.enabled_from ? sim.enabled_from : null;
+            const until = sim && sim.enabled_until ? sim.enabled_until : null;
+            const format = (value) => formatCompactDateTime(value);
+            const fromText = format(from);
+            const untilText = format(until);
+
+            if (fromText && untilText) return `Disponible: ${fromText} - ${untilText}`;
+            if (fromText) return `Disponible desde: ${fromText}`;
+            if (untilText) return `Disponible hasta: ${untilText}`;
+            return 'Disponible sin horario';
+        }
+
         function renderSimulators() {
             const list = document.getElementById('simulatorList');
             if (!list) return;
@@ -453,6 +493,9 @@
             }
             
             const sorted = [...allSimulators].sort((a, b) => a.name.localeCompare(b.name));
+            const previousSelectedName = selectedSimulator && selectedSimulator.name ? selectedSimulator.name : '';
+            selectedSimulator = null;
+
             sorted.forEach(sim => {
                 const card = document.createElement('div');
                 card.className = 'simulator-card';
@@ -463,14 +506,33 @@
                         <span><i class="fas fa-clock"></i> ${sim.time_limit || 0} min</span>
                         <span><i class="fas fa-star"></i> ${sim.last_score ? `${sim.last_score.correct}/${sim.last_score.total}` : 'Sin puntaje'}</span>
                     </div>
+                    <div class="simulator-card-meta">
+                        <span><i class="fas ${sim.is_open ? 'fa-toggle-on' : 'fa-toggle-off'}"></i> ${sim.is_open ? 'Habilitado' : 'Deshabilitado'}</span>
+                    </div>
+                    <div class="simulator-card-meta">
+                        <span><i class="fas fa-calendar-alt"></i> ${formatSimulatorWindow(sim)}</span>
+                    </div>
                 `;
                 card.addEventListener('click', function() {
                     document.querySelectorAll('.simulator-card').forEach(c => c.classList.remove('active'));
                     this.classList.add('active');
                     selectedSimulator = sim;
+                    updateSimulatorResultsButtonVisibility();
                 });
                 list.appendChild(card);
+
+                if (previousSelectedName && sim.name === previousSelectedName) {
+                    card.classList.add('active');
+                    selectedSimulator = sim;
+                }
             });
+
+            if (!selectedSimulator && sorted.length > 0) {
+                selectedSimulator = sorted[0];
+                const firstCard = list.querySelector('.simulator-card');
+                if (firstCard) firstCard.classList.add('active');
+            }
+            updateSimulatorResultsButtonVisibility();
         }
 
         async function startSimulatorExam() {
@@ -484,7 +546,7 @@
                 const data = await response.json();
                 
                 if (!data.success || !data.questions || data.questions.length === 0) {
-                    showNotification('No hay preguntas en este simulador', 'error');
+                    showNotification(data.error || 'No hay preguntas en este simulador', 'error');
                     return;
                 }
                 
@@ -1734,13 +1796,18 @@ function showExamQuestion(index) {
                 fetch(`/api/simulators/${encodeURIComponent(selectedSimulator.name)}/score`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correct: results.correct, total: results.total })
+                    body: JSON.stringify({
+                        correct: results.correct,
+                        total: results.total,
+                        section_stats: results.sectionStats || {}
+                    })
                 })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
                         selectedSimulator.last_score = { correct: results.correct, total: results.total };
                         renderSimulators();
+                        updateSimulatorResultsButtonVisibility();
                     }
                 })
                 .catch(err => console.log('Error guardando puntaje:', err));
@@ -1765,6 +1832,7 @@ function showExamQuestion(index) {
             const total = examState.questions.length;
 
             const review = [];
+            const sectionStats = {};
 
             
 
@@ -1801,6 +1869,15 @@ function showExamQuestion(index) {
                 
 
                 if (isCorrect) correct++;
+
+                const sectionName = (question.simulator_subject || 'General').trim() || 'General';
+                if (!sectionStats[sectionName]) {
+                    sectionStats[sectionName] = { correct: 0, total: 0 };
+                }
+                sectionStats[sectionName].total += 1;
+                if (isCorrect) {
+                    sectionStats[sectionName].correct += 1;
+                }
 
                 
 
@@ -1853,8 +1930,8 @@ function showExamQuestion(index) {
                 total,
 
                 timeUsed: timeUsedFormatted,
-
-                review
+                review,
+                sectionStats
 
             };
 
@@ -1991,6 +2068,87 @@ function showExamQuestion(index) {
 
         }
 
+        async function viewSimulatorResults() {
+            if ((!selectedSimulator || !selectedSimulator.last_score) && allSimulators && allSimulators.length > 0) {
+                const attempted = allSimulators
+                    .filter(sim => sim && sim.last_score)
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                if (attempted.length > 0) {
+                    selectedSimulator = attempted[0];
+                }
+            }
+
+            if (!selectedSimulator) {
+                showNotification('No hay simuladores disponibles', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/simulators/${encodeURIComponent(selectedSimulator.name)}/results`);
+                const data = await response.json();
+                if (!data.success) {
+                    showNotification(data.error || 'No se pudieron cargar resultados', 'error');
+                    return;
+                }
+                renderSimulatorResults(data);
+                document.getElementById('simulatorResultsModal').classList.add('active');
+            } catch (error) {
+                console.error('Error cargando resultados:', error);
+                showNotification('Error de conexion', 'error');
+            }
+        }
+
+        function renderSimulatorResults(data) {
+            const title = document.getElementById('simulatorResultsTitle');
+            const subtitle = document.getElementById('simulatorResultsSubtitle');
+            const wrap = document.getElementById('simulatorResultsTableWrap');
+            if (!title || !subtitle || !wrap) return;
+
+            title.textContent = `Resultados: ${data.simulator || 'Simulador'}`;
+            const rows = Array.isArray(data.results) ? data.results : [];
+            const sections = Array.isArray(data.sections) ? data.sections : [];
+            subtitle.textContent = '';
+
+            if (rows.length === 0) {
+                wrap.innerHTML = '<div class="empty-state">Aun no hay resultados para este simulador.</div>';
+                return;
+            }
+
+            const headerCols = ['#', 'Alumno', 'Grupo', ...sections, 'Total'];
+            const thead = `<thead><tr>${headerCols.map(col => `<th>${col}</th>`).join('')}</tr></thead>`;
+            const tbody = rows.map(row => {
+                const sectionCols = sections.map(section => {
+                    const stats = row.section_scores && row.section_scores[section]
+                        ? row.section_scores[section]
+                        : { correct: 0, total: 0 };
+                    return `<td>${stats.correct}/${stats.total}</td>`;
+                }).join('');
+                return `
+                    <tr>
+                        <td>${row.position || '-'}</td>
+                        <td>${row.student_name || 'Alumno'}</td>
+                        <td>${row.student_group || '-'}</td>
+                        ${sectionCols}
+                        <td>${row.correct || 0}/${row.total || 0}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            wrap.innerHTML = `
+                <div class="sim-results-table-wrap">
+                    <table class="sim-results-table">
+                        ${thead}
+                        <tbody>${tbody}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function closeSimulatorResults() {
+            const modal = document.getElementById('simulatorResultsModal');
+            if (modal) modal.classList.remove('active');
+        }
+
         
 
         // ========== FUNCIONES GENERALES ==========
@@ -2028,6 +2186,7 @@ function showExamQuestion(index) {
                     if (modal.id === 'studyQuestionModal') closeStudyModal();
 
                     if (modal.id === 'examResultsModal') closeResults();
+                    if (modal.id === 'simulatorResultsModal') closeSimulatorResults();
 
                 }
 
@@ -2046,6 +2205,7 @@ function showExamQuestion(index) {
                 closeStudyModal();
 
                 closeResults();
+                closeSimulatorResults();
 
                 
 

@@ -84,15 +84,21 @@
 
         </div>
 
-        <div class="user-menu" id="userMenu">
-            <button class="user-menu-btn" id="userMenuBtn" title="Cuenta">
-                <i class="fas fa-user-circle"></i>
-                <span id="userMenuName">Usuario</span>
+        <div class="header-actions">
+            <button class="user-menu-btn" id="viewSimulatorResultsBtn" title="Ver resultados" style="display: none;">
+                <i class="fas fa-table"></i>
+                <span>Resultados</span>
             </button>
-            <div class="user-menu-dropdown" id="userMenuDropdown">
-                <button class="user-menu-item" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+            <div class="user-menu" id="userMenu">
+                <button class="user-menu-btn" id="userMenuBtn" title="Cuenta">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="userMenuName">Usuario</span>
                 </button>
+                <div class="user-menu-dropdown" id="userMenuDropdown">
+                    <button class="user-menu-item" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                    </button>
+                </div>
             </div>
         </div>
     </header>
@@ -460,6 +466,24 @@
 
         </div>
 
+    </div>
+
+    <div class="exam-results-modal" id="simulatorResultsModal">
+        <div class="results-card">
+            <div class="results-header">
+                <h3 id="simulatorResultsTitle">Resultados del simulador</h3>
+                <div class="results-grade" id="simulatorResultsSubtitle">Ranking de alumnos</div>
+            </div>
+            <div class="results-body">
+                <div id="simulatorResultsTableWrap"></div>
+            </div>
+            <div class="results-footer">
+                <button class="action-btn" onclick="closeSimulatorResults()">
+                    <i class="fas fa-times"></i>
+                    <span>Cerrar</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     

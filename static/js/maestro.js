@@ -2,6 +2,10 @@
         let currentUser = null;
         let userRole = null;
         let allQuestions = [];
+        let allStudents = [];
+        let currentStudentGroup = 'todos';
+        let studentGroupsSummary = [];
+        let pendingGroupDelete = null;
         let currentPage = 1;
         let itemsPerPage = 12;
         let currentSearch = '';
@@ -78,10 +82,10 @@ let existingImageUrl = null;
                         loadQuestionsPage();
                     } else if (this.dataset.page === 'stats') {
                         loadStatsPage();
-                    } else if (this.dataset.page === 'study') {
-                        loadStudyPage();
                     } else if (this.dataset.page === 'simulators') {
                         loadSimulatorsPage();
+                    } else if (this.dataset.page === 'students') {
+                        loadStudentsPage();
                     }
                 });
             });
@@ -91,18 +95,42 @@ let existingImageUrl = null;
             
             // Botones flotantes y de modal
             // Y cámbialas para usar window.openModal (la función de app.js):
-            document.getElementById('openModalBtn').addEventListener('click', function() {
-                window.openModal();
-            });
-            document.getElementById('openModalFromListBtn').addEventListener('click', function() {
-                window.openModal();
-            });
-            document.getElementById('floatingNewQuestionBtn').addEventListener('click', function() {
-                window.openModal();
-            });
-            document.getElementById('addFirstQuestionBtn').addEventListener('click', function() {
-                window.openModal();
-            });
+            const openModalBtn = document.getElementById('openModalBtn');
+            if (openModalBtn) {
+                openModalBtn.addEventListener('click', function() {
+                    window.openModal();
+                });
+            }
+            const openModalFromListBtn = document.getElementById('openModalFromListBtn');
+            if (openModalFromListBtn) {
+                openModalFromListBtn.addEventListener('click', function() {
+                    window.openModal();
+                });
+            }
+            const openStudentModalBtn = document.getElementById('openStudentModalBtn');
+            if (openStudentModalBtn) {
+                openStudentModalBtn.addEventListener('click', openStudentModal);
+            }
+            const openStudentModalMenuBtn = document.getElementById('openStudentModalMenuBtn');
+            if (openStudentModalMenuBtn) {
+                openStudentModalMenuBtn.addEventListener('click', openStudentModal);
+            }
+            const openStudentModalFromStudentsBtn = document.getElementById('openStudentModalFromStudentsBtn');
+            if (openStudentModalFromStudentsBtn) {
+                openStudentModalFromStudentsBtn.addEventListener('click', openStudentModal);
+            }
+            const floatingNewQuestionBtn = document.getElementById('floatingNewQuestionBtn');
+            if (floatingNewQuestionBtn) {
+                floatingNewQuestionBtn.addEventListener('click', function() {
+                    window.openModal();
+                });
+            }
+            const addFirstQuestionBtn = document.getElementById('addFirstQuestionBtn');
+            if (addFirstQuestionBtn) {
+                addFirstQuestionBtn.addEventListener('click', function() {
+                    window.openModal();
+                });
+            }
             // Botón de ayuda
             document.getElementById('showHelpBtn').addEventListener('click', function() {
                 document.getElementById('helpModal').classList.add('active');
@@ -198,6 +226,66 @@ let existingImageUrl = null;
             
             // Configurar botón de eliminar en modal de confirmación
             document.getElementById('confirmDeleteBtn').addEventListener('click', deleteQuestion);
+            const closeStudentModalBtn = document.getElementById('closeStudentModalBtn');
+            const cancelStudentModalBtn = document.getElementById('cancelStudentModalBtn');
+            const createStudentBtn = document.getElementById('createStudentBtn');
+            if (closeStudentModalBtn) {
+                closeStudentModalBtn.addEventListener('click', closeStudentModal);
+            }
+            if (cancelStudentModalBtn) {
+                cancelStudentModalBtn.addEventListener('click', closeStudentModal);
+            }
+            if (createStudentBtn) {
+                createStudentBtn.addEventListener('click', createStudent);
+            }
+            const closeStudentCredentialsModalBtn = document.getElementById('closeStudentCredentialsModalBtn');
+            const closeStudentCredentialsBtn = document.getElementById('closeStudentCredentialsBtn');
+            const copyStudentCredentialsBtn = document.getElementById('copyStudentCredentialsBtn');
+            if (closeStudentCredentialsModalBtn) {
+                closeStudentCredentialsModalBtn.addEventListener('click', closeStudentCredentialsModal);
+            }
+            if (closeStudentCredentialsBtn) {
+                closeStudentCredentialsBtn.addEventListener('click', closeStudentCredentialsModal);
+            }
+            if (copyStudentCredentialsBtn) {
+                copyStudentCredentialsBtn.addEventListener('click', copyStudentCredentials);
+            }
+            const closeGroupDeleteModalBtn = document.getElementById('closeGroupDeleteModalBtn');
+            const cancelGroupDeleteBtn = document.getElementById('cancelGroupDeleteBtn');
+            const confirmGroupDeleteBtn = document.getElementById('confirmGroupDeleteBtn');
+            if (closeGroupDeleteModalBtn) {
+                closeGroupDeleteModalBtn.addEventListener('click', closeGroupDeleteModal);
+            }
+            if (cancelGroupDeleteBtn) {
+                cancelGroupDeleteBtn.addEventListener('click', closeGroupDeleteModal);
+            }
+            if (confirmGroupDeleteBtn) {
+                confirmGroupDeleteBtn.addEventListener('click', confirmGroupDelete);
+            }
+            const studentModal = document.getElementById('studentModal');
+            if (studentModal) {
+                studentModal.addEventListener('click', function(e) {
+                    if (e.target === studentModal) {
+                        closeStudentModal();
+                    }
+                });
+            }
+            const studentCredentialsModal = document.getElementById('studentCredentialsModal');
+            if (studentCredentialsModal) {
+                studentCredentialsModal.addEventListener('click', function(e) {
+                    if (e.target === studentCredentialsModal) {
+                        closeStudentCredentialsModal();
+                    }
+                });
+            }
+            const groupDeleteModal = document.getElementById('groupDeleteModal');
+            if (groupDeleteModal) {
+                groupDeleteModal.addEventListener('click', function(e) {
+                    if (e.target === groupDeleteModal) {
+                        closeGroupDeleteModal();
+                    }
+                });
+            }
 
             // Simuladores
             const refreshSimBtn = document.getElementById('refreshSimulatorsBtn');
@@ -208,14 +296,286 @@ let existingImageUrl = null;
             if (createSimBtn) {
                 createSimBtn.addEventListener('click', createSimulator);
             }
+            const openSimulatorCreateBtn = document.getElementById('openSimulatorCreateModalBtn');
+            if (openSimulatorCreateBtn) {
+                openSimulatorCreateBtn.addEventListener('click', openSimulatorCreateModal);
+            }
+            const closeSimulatorCreateBtn = document.getElementById('closeSimulatorCreateModalBtn');
+            if (closeSimulatorCreateBtn) {
+                closeSimulatorCreateBtn.addEventListener('click', closeSimulatorCreateModal);
+            }
+            const cancelSimulatorCreateBtn = document.getElementById('cancelSimulatorCreateModalBtn');
+            if (cancelSimulatorCreateBtn) {
+                cancelSimulatorCreateBtn.addEventListener('click', closeSimulatorCreateModal);
+            }
+            const simulatorCreateModal = document.getElementById('simulatorCreateModal');
+            if (simulatorCreateModal) {
+                simulatorCreateModal.addEventListener('click', function(e) {
+                    if (e.target === simulatorCreateModal) {
+                        closeSimulatorCreateModal();
+                    }
+                });
+            }
+            const closeSimulatorEditBtn = document.getElementById('closeSimulatorEditModalBtn');
+            if (closeSimulatorEditBtn) {
+                closeSimulatorEditBtn.addEventListener('click', closeSimulatorEditModal);
+            }
+            const cancelSimulatorEditBtn = document.getElementById('cancelSimulatorEditModalBtn');
+            if (cancelSimulatorEditBtn) {
+                cancelSimulatorEditBtn.addEventListener('click', closeSimulatorEditModal);
+            }
+            const saveSimulatorEditBtn = document.getElementById('saveSimulatorEditBtn');
+            if (saveSimulatorEditBtn) {
+                saveSimulatorEditBtn.addEventListener('click', saveSimulatorEdit);
+            }
+            const simulatorEditModal = document.getElementById('simulatorEditModal');
+            if (simulatorEditModal) {
+                simulatorEditModal.addEventListener('click', function(e) {
+                    if (e.target === simulatorEditModal) {
+                        closeSimulatorEditModal();
+                    }
+                });
+            }
+            const closeSimulatorAttendanceModalBtn = document.getElementById('closeSimulatorAttendanceModalBtn');
+            if (closeSimulatorAttendanceModalBtn) {
+                closeSimulatorAttendanceModalBtn.addEventListener('click', closeSimulatorAttendanceModal);
+            }
+            const closeSimulatorAttendanceBtn = document.getElementById('closeSimulatorAttendanceBtn');
+            if (closeSimulatorAttendanceBtn) {
+                closeSimulatorAttendanceBtn.addEventListener('click', closeSimulatorAttendanceModal);
+            }
+            const refreshAttendanceBtn = document.getElementById('refreshAttendanceBtn');
+            if (refreshAttendanceBtn) {
+                refreshAttendanceBtn.addEventListener('click', function() {
+                    const simulatorName = (document.getElementById('attendanceSimulatorName')?.value || '').trim();
+                    if (simulatorName) loadSimulatorAttendance(simulatorName);
+                });
+            }
+            const attendanceGroupFilter = document.getElementById('attendanceGroupFilter');
+            if (attendanceGroupFilter) {
+                attendanceGroupFilter.addEventListener('change', function() {
+                    const simulatorName = (document.getElementById('attendanceSimulatorName')?.value || '').trim();
+                    if (simulatorName) loadSimulatorAttendance(simulatorName);
+                });
+            }
+            const simulatorAttendanceModal = document.getElementById('simulatorAttendanceModal');
+            if (simulatorAttendanceModal) {
+                simulatorAttendanceModal.addEventListener('click', function(e) {
+                    if (e.target === simulatorAttendanceModal) {
+                        closeSimulatorAttendanceModal();
+                    }
+                });
+            }
             const simulatorList = document.getElementById('simulatorListAdmin');
             if (simulatorList) {
                 simulatorList.addEventListener('click', handleSimulatorListClick);
             }
+            const refreshStudentsBtn = document.getElementById('refreshStudentsBtn');
+            if (refreshStudentsBtn) {
+                refreshStudentsBtn.addEventListener('click', loadStudentsPage);
+            }
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.group-actions') || e.target.closest('.simulator-actions')) return;
+                document.querySelectorAll('.group-actions-menu.open').forEach(menu => {
+                    menu.classList.remove('open');
+                });
+                document.querySelectorAll('.simulator-actions-menu.open').forEach(menu => {
+                    menu.classList.remove('open');
+                });
+            });
 
             // Listas de simuladores para autocompletar en modal y carga masiva
             loadSimulatorNameOptions();
         }
+
+        function openStudentModal() {
+            const modal = document.getElementById('studentModal');
+            if (!modal) return;
+            resetStudentForm();
+            modal.classList.add('active');
+        }
+
+        function closeStudentModal() {
+            const modal = document.getElementById('studentModal');
+            if (!modal) return;
+            modal.classList.remove('active');
+            resetStudentForm();
+        }
+
+        function openStudentCredentialsModal(email, password) {
+            const modal = document.getElementById('studentCredentialsModal');
+            const emailEl = document.getElementById('studentCredentialsEmail');
+            const passwordEl = document.getElementById('studentCredentialsPassword');
+            if (!modal || !emailEl || !passwordEl) return;
+            emailEl.textContent = email || '-';
+            passwordEl.textContent = password || '-';
+            modal.classList.add('active');
+        }
+
+        function closeStudentCredentialsModal() {
+            const modal = document.getElementById('studentCredentialsModal');
+            if (!modal) return;
+            modal.classList.remove('active');
+        }
+
+        function openGroupDeleteModal(group) {
+            pendingGroupDelete = group;
+            const modal = document.getElementById('groupDeleteModal');
+            const warning = document.getElementById('groupDeleteWarningText');
+            const input = document.getElementById('groupDeleteConfirmInput');
+            if (!modal || !warning || !input) return;
+            warning.textContent = `Vas a eliminar el grupo "${group}" y borrar definitivamente todos sus alumnos.`;
+            input.value = '';
+            modal.classList.add('active');
+            input.focus();
+        }
+
+        function closeGroupDeleteModal() {
+            const modal = document.getElementById('groupDeleteModal');
+            const input = document.getElementById('groupDeleteConfirmInput');
+            if (modal) modal.classList.remove('active');
+            if (input) input.value = '';
+            pendingGroupDelete = null;
+        }
+
+        async function confirmGroupDelete() {
+            const group = pendingGroupDelete;
+            const input = document.getElementById('groupDeleteConfirmInput');
+            if (!group || !input) return;
+            if ((input.value || '').trim() !== group) {
+                showNotification('Confirmación cancelada: nombre de grupo no coincide', 'warning');
+                return;
+            }
+            try {
+                const response = await fetch(`/api/students/groups/${encodeURIComponent(group)}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    if (currentStudentGroup === group) currentStudentGroup = 'todos';
+                    const deleted = data.deleted_count || 0;
+                    showNotification(`Grupo eliminado (${deleted} alumnos borrados)`, 'success');
+                    closeGroupDeleteModal();
+                    loadStudentsPage();
+                } else {
+                    showNotification(data.error || 'Error al eliminar grupo', 'error');
+                }
+            } catch (error) {
+                console.error('Error eliminando grupo:', error);
+                showNotification('Error de conexión', 'error');
+            }
+        }
+
+        async function copyStudentCredentials() {
+            const email = document.getElementById('studentCredentialsEmail')?.textContent || '';
+            const password = document.getElementById('studentCredentialsPassword')?.textContent || '';
+            const text = `Correo: ${email}\nContrasena: ${password}`;
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    showNotification('Datos copiados al portapapeles', 'success');
+                    return;
+                }
+                throw new Error('Clipboard API no disponible');
+            } catch (error) {
+                try {
+                    const tempInput = document.createElement('textarea');
+                    tempInput.value = text;
+                    tempInput.setAttribute('readonly', '');
+                    tempInput.style.position = 'fixed';
+                    tempInput.style.left = '-9999px';
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    showNotification('Datos copiados al portapapeles', 'success');
+                } catch (fallbackError) {
+                    console.error('Error copiando datos:', error, fallbackError);
+                    showNotification('No se pudo copiar. Intenta manualmente.', 'error');
+                }
+            }
+        }
+
+        function resetStudentForm() {
+            const ids = ['studentNombre', 'studentApellido', 'studentEmail', 'studentPassword', 'studentGroup'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+        }
+
+        async function createStudent() {
+            const nombre = (document.getElementById('studentNombre')?.value || '').trim();
+            const apellido = (document.getElementById('studentApellido')?.value || '').trim();
+            const email = (document.getElementById('studentEmail')?.value || '').trim();
+            const password = (document.getElementById('studentPassword')?.value || '').trim();
+            const grupo = (document.getElementById('studentGroup')?.value || '').trim();
+
+            if (!nombre || !apellido || !email || !password || !grupo) {
+                showNotification('Completa todos los campos del alumno', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('createStudentBtn');
+            const originalText = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+            }
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nombre,
+                        apellido,
+                        email,
+                        password,
+                        grupo,
+                        rol: 'alumno'
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Alumno registrado correctamente', 'success');
+                    closeStudentModal();
+                    openStudentCredentialsModal(email, password);
+                    loadStudentsPage();
+                } else {
+                    showNotification(data.error || 'Error al registrar alumno', 'error');
+                }
+            } catch (error) {
+                console.error('Error registrando alumno:', error);
+                showNotification('Error de conexión', 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('studentModal');
+            const groupDeleteModal = document.getElementById('groupDeleteModal');
+            if (e.key === 'Enter') {
+                if (groupDeleteModal && groupDeleteModal.classList.contains('active')) {
+                    e.preventDefault();
+                    confirmGroupDelete();
+                    return;
+                }
+                if (!modal || !modal.classList.contains('active')) return;
+                e.preventDefault();
+                createStudent();
+            }
+            if (e.key === 'Escape') {
+                closeStudentModal();
+                closeStudentCredentialsModal();
+                closeGroupDeleteModal();
+            }
+        });
         
         function initMathToolbars() {
             // Inicializar todos los teclados matemáticos
@@ -357,6 +717,7 @@ let existingImageUrl = null;
         function toggleSimulatorMode() {
             const simulatorCheckbox = document.getElementById('modalIsSimulator');
             const simulatorNameInput = document.getElementById('modalSimulatorName');
+            const simulatorSectionSelect = document.getElementById('modalSimulatorSection');
             const simulatorHint = document.getElementById('simulatorHint');
             const subjectSelect = document.getElementById('modalSubject');
             const topicInput = document.getElementById('modalTopic');
@@ -366,19 +727,27 @@ let existingImageUrl = null;
 
             if (simulatorCheckbox.checked) {
                 simulatorNameInput.style.display = 'block';
+                if (simulatorSectionSelect) simulatorSectionSelect.style.display = 'block';
                 if (simulatorHint) simulatorHint.style.display = 'block';
                 subjectSelect.value = 'Simulador';
                 subjectSelect.disabled = true;
                 topicInput.disabled = true;
                 if (newSubjectInput) newSubjectInput.style.display = 'none';
+                if (simulatorSectionSelect && !simulatorSectionSelect.value) {
+                    simulatorSectionSelect.value = 'Matemáticas';
+                }
                 loadModalTopics('');
             } else {
                 simulatorNameInput.style.display = 'none';
+                if (simulatorSectionSelect) simulatorSectionSelect.style.display = 'none';
                 if (simulatorHint) simulatorHint.style.display = 'none';
                 subjectSelect.disabled = false;
                 topicInput.disabled = false;
                 if (subjectSelect.value === 'Simulador') {
                     subjectSelect.value = 'MatemÃ¡ticas';
+                }
+                if (simulatorSectionSelect) {
+                    simulatorSectionSelect.value = '';
                 }
                 loadModalTopics(subjectSelect.value);
             }
@@ -387,6 +756,7 @@ let existingImageUrl = null;
         function toggleBulkSimulatorMode() {
             const simulatorCheckbox = document.getElementById('bulkIsSimulator');
             const simulatorNameInput = document.getElementById('bulkSimulatorName');
+            const simulatorSectionSelect = document.getElementById('bulkSimulatorSection');
             const simulatorHint = document.getElementById('bulkSimulatorHint');
             const subjectSelect = document.getElementById('bulkSubject');
             const topicInput = document.getElementById('bulkTopic');
@@ -396,19 +766,27 @@ let existingImageUrl = null;
 
             if (simulatorCheckbox.checked) {
                 simulatorNameInput.style.display = 'block';
+                if (simulatorSectionSelect) simulatorSectionSelect.style.display = 'block';
                 if (simulatorHint) simulatorHint.style.display = 'block';
                 subjectSelect.value = 'Simulador';
                 subjectSelect.disabled = true;
                 topicInput.disabled = true;
                 if (newSubjectInput) newSubjectInput.style.display = 'none';
+                if (simulatorSectionSelect && !simulatorSectionSelect.value) {
+                    simulatorSectionSelect.value = 'Matemáticas';
+                }
                 loadBulkTopics('');
             } else {
                 simulatorNameInput.style.display = 'none';
+                if (simulatorSectionSelect) simulatorSectionSelect.style.display = 'none';
                 if (simulatorHint) simulatorHint.style.display = 'none';
                 subjectSelect.disabled = false;
                 topicInput.disabled = false;
                 if (subjectSelect.value === 'Simulador') {
                     subjectSelect.value = 'MatemÃ¡ticas';
+                }
+                if (simulatorSectionSelect) {
+                    simulatorSectionSelect.value = '';
                 }
                 loadBulkTopics(subjectSelect.value);
             }
@@ -1025,6 +1403,176 @@ function createQuestionCard(question) {
             }
         }
 
+        async function loadStudentsPage() {
+            let url = '/api/students';
+            if (currentStudentGroup && currentStudentGroup !== 'todos') {
+                url += `?group=${encodeURIComponent(currentStudentGroup)}`;
+            }
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (!data.success) {
+                    showNotification(data.error || 'Error al cargar alumnos', 'error');
+                    return;
+                }
+
+                allStudents = data.students || [];
+                studentGroupsSummary = data.groups_summary || [];
+                renderStudentGroupButtons(studentGroupsSummary);
+                renderStudents();
+            } catch (error) {
+                console.error('Error cargando alumnos:', error);
+                showNotification('Error de conexión al cargar alumnos', 'error');
+            }
+        }
+
+        function renderStudentGroupButtons(groupsSummary) {
+            const container = document.getElementById('studentGroupsButtons');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const allBtn = document.createElement('div');
+            allBtn.className = currentStudentGroup === 'todos' ? 'subject-card active' : 'subject-card';
+            allBtn.innerHTML = `
+                <div class="subject-icon"><i class="fas fa-users"></i></div>
+                <div class="subject-name">Todos</div>
+            `;
+            allBtn.addEventListener('click', function() {
+                if (currentStudentGroup === 'todos') return;
+                currentStudentGroup = 'todos';
+                loadStudentsPage();
+            });
+            container.appendChild(allBtn);
+
+            groupsSummary.forEach(item => {
+                const group = item.name;
+                const count = item.count || 0;
+                const card = document.createElement('div');
+                card.className = currentStudentGroup === group ? 'group-card active' : 'group-card';
+                card.innerHTML = `
+                    <div class="group-card-main">
+                        <div class="group-card-title">${group}</div>
+                        <div class="group-card-count">${count} alumnos</div>
+                    </div>
+                    <div class="group-actions">
+                        <button type="button" class="group-actions-toggle" title="Acciones">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="group-actions-menu">
+                            <button type="button" data-action="edit">Editar</button>
+                            <button type="button" data-action="delete">Eliminar</button>
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', function(e) {
+                    if (e.target.closest('.group-actions')) return;
+                    if (currentStudentGroup === group) return;
+                    currentStudentGroup = group;
+                    loadStudentsPage();
+                });
+
+                const toggle = card.querySelector('.group-actions-toggle');
+                const menu = card.querySelector('.group-actions-menu');
+                if (toggle && menu) {
+                    toggle.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        document.querySelectorAll('.group-actions-menu.open').forEach(m => {
+                            if (m !== menu) m.classList.remove('open');
+                        });
+                        menu.classList.toggle('open');
+                    });
+                    menu.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        const actionBtn = e.target.closest('button[data-action]');
+                        if (!actionBtn) return;
+                        const action = actionBtn.dataset.action;
+                        menu.classList.remove('open');
+                        if (action === 'edit') {
+                            await renameStudentGroup(group);
+                        } else if (action === 'delete') {
+                            await deleteStudentGroup(group);
+                        }
+                    });
+                }
+
+                container.appendChild(card);
+            });
+
+            const validGroups = groupsSummary.map(item => item.name);
+            if (currentStudentGroup !== 'todos' && !validGroups.includes(currentStudentGroup)) {
+                currentStudentGroup = 'todos';
+            }
+        }
+
+        async function renameStudentGroup(group) {
+            const newGroup = prompt(`Nuevo nombre para el grupo "${group}":`, group);
+            if (!newGroup) return;
+            const trimmed = newGroup.trim();
+            if (!trimmed || trimmed === group) return;
+
+            try {
+                const response = await fetch(`/api/students/groups/${encodeURIComponent(group)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_group: trimmed })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    if (currentStudentGroup === group) currentStudentGroup = trimmed;
+                    showNotification('Grupo actualizado', 'success');
+                    loadStudentsPage();
+                } else {
+                    showNotification(data.error || 'Error al editar grupo', 'error');
+                }
+            } catch (error) {
+                console.error('Error editando grupo:', error);
+                showNotification('Error de conexión', 'error');
+            }
+        }
+
+        async function deleteStudentGroup(group) {
+            openGroupDeleteModal(group);
+        }
+
+        function renderStudents() {
+            const container = document.getElementById('studentsList');
+            const emptyState = document.getElementById('noStudentsMessage');
+            if (!container || !emptyState) return;
+
+            container.innerHTML = '';
+            if (!allStudents.length) {
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            allStudents.forEach(student => {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                const fullName = `${student.nombre || ''} ${student.apellido || ''}`.trim();
+                card.innerHTML = `
+                    <div class="question-header">
+                        <div class="question-badges">
+                            <span class="badge badge-subject">${student.grupo || 'Sin grupo'}</span>
+                            <span class="badge badge-topic">Alumno</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <div style="font-weight: 700; color: var(--text-primary);">${fullName || 'Sin nombre'}</div>
+                        <div style="color: var(--text-secondary); font-size: 0.92rem; margin-top: 6px;">
+                            <i class="fas fa-envelope"></i> ${student.email || 'Sin correo'}
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 0.82rem; margin-top: 8px;">
+                            <i class="fas fa-calendar"></i> Registro: ${formatDate(student.created_at)}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
         function updateSimulatorNameLists(simulators) {
             const names = (simulators || [])
                 .map(sim => sim && sim.name ? String(sim.name) : '')
@@ -1059,6 +1607,82 @@ function createQuestionCard(question) {
             }
         }
 
+        function openSimulatorCreateModal() {
+            const modal = document.getElementById('simulatorCreateModal');
+            const nameInput = document.getElementById('newSimulatorName');
+            if (!modal) return;
+            modal.classList.add('active');
+            if (nameInput) {
+                nameInput.focus();
+            }
+        }
+
+        function closeSimulatorCreateModal() {
+            const modal = document.getElementById('simulatorCreateModal');
+            if (!modal) return;
+            modal.classList.remove('active');
+        }
+
+        function openSimulatorEditModal(simData) {
+            const modal = document.getElementById('simulatorEditModal');
+            const originalNameEl = document.getElementById('editSimulatorOriginalName');
+            const nameEl = document.getElementById('editSimulatorName');
+            const timeEl = document.getElementById('editSimulatorTime');
+            const fromEl = document.getElementById('editSimulatorEnabledFrom');
+            const untilEl = document.getElementById('editSimulatorEnabledUntil');
+            if (!modal || !originalNameEl || !nameEl || !timeEl || !fromEl || !untilEl) return;
+
+            originalNameEl.value = simData.name || '';
+            nameEl.value = simData.name || '';
+            timeEl.value = simData.time_limit || 30;
+            fromEl.value = toDateTimeLocalValue(simData.enabled_from);
+            untilEl.value = toDateTimeLocalValue(simData.enabled_until);
+            modal.classList.add('active');
+            nameEl.focus();
+        }
+
+        function closeSimulatorEditModal() {
+            const modal = document.getElementById('simulatorEditModal');
+            if (!modal) return;
+            modal.classList.remove('active');
+        }
+
+        function toDateTimeLocalValue(value) {
+            if (!value) return '';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '';
+            const pad = (n) => String(n).padStart(2, '0');
+            const year = date.getFullYear();
+            const month = pad(date.getMonth() + 1);
+            const day = pad(date.getDate());
+            const hours = pad(date.getHours());
+            const minutes = pad(date.getMinutes());
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        function formatDateTimeLocal(value) {
+            if (!value) return 'Sin límite';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return 'Sin límite';
+            const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+            const day = date.getDate();
+            const month = months[date.getMonth()];
+            let hour = date.getHours();
+            const suffix = hour >= 12 ? 'pm' : 'am';
+            hour = hour % 12 || 12;
+            const minute = String(date.getMinutes()).padStart(2, '0');
+            return `${day}/${month} ${hour}:${minute} ${suffix}`;
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function renderSimulatorsAdmin(simulators) {
             const container = document.getElementById('simulatorListAdmin');
             if (!container) return;
@@ -1069,16 +1693,40 @@ function createQuestionCard(question) {
             }
             
             container.innerHTML = simulators.map(sim => `
-                <div class="simulator-admin-card" data-name="${sim.name}">
+                <div
+                    class="simulator-admin-card"
+                    data-name="${escapeHtml(sim.name)}"
+                    data-time-limit="${sim.time_limit || 30}"
+                    data-enabled-from="${escapeHtml(sim.enabled_from || '')}"
+                    data-enabled-until="${escapeHtml(sim.enabled_until || '')}"
+                    data-force-enabled="${sim.force_enabled ? '1' : '0'}"
+                >
                     <div class="simulator-admin-header">
                         <div>
-                            <input type="text" class="form-control simulator-name-input" value="${sim.name}">
-                            <div class="simulator-admin-meta">${sim.question_count || 0} preguntas</div>
+                            <div class="simulator-admin-title">${escapeHtml(sim.name)}</div>
+                            <div class="simulator-admin-meta">
+                                <span class="simulator-status ${sim.is_open ? 'open' : 'closed'}">${sim.is_open ? 'Habilitado' : 'Deshabilitado'}</span>
+                            </div>
+                            <div class="simulator-admin-meta">
+                                Desde: ${formatDateTimeLocal(sim.enabled_from)} | Hasta: ${formatDateTimeLocal(sim.enabled_until)}
+                            </div>
                         </div>
                         <div class="simulator-admin-actions">
-                            <input type="number" min="1" class="form-control simulator-time-input" value="${sim.time_limit || 30}">
-                            <button class="btn btn-primary btn-sm" data-action="save-sim">Guardar</button>
-                            <button class="btn btn-danger btn-sm" data-action="delete-sim">Eliminar</button>
+                            <button class="btn btn-outline btn-sm" data-action="attendance-sim">Control</button>
+                            <button class="btn btn-outline btn-sm" data-action="toggle-force">${sim.force_enabled ? 'Usar fechas' : 'Habilitar ahora'}</button>
+                            <div class="simulator-actions">
+                                <button type="button" class="simulator-actions-toggle" data-action="toggle-sim-menu" title="Acciones">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="simulator-actions-menu">
+                                    <button type="button" data-action="edit-sim">
+                                        <i class="fas fa-pen"></i> Editar
+                                    </button>
+                                    <button type="button" data-action="delete-sim">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1088,12 +1736,17 @@ function createQuestionCard(question) {
         async function createSimulator() {
             const nameInput = document.getElementById('newSimulatorName');
             const timeInput = document.getElementById('newSimulatorTime');
+            const enabledFromInput = document.getElementById('newSimulatorEnabledFrom');
+            const enabledUntilInput = document.getElementById('newSimulatorEnabledUntil');
             if (!nameInput || !timeInput) return;
             
             const name = nameInput.value.trim();
             const timeLimit = parseInt(timeInput.value, 10);
+            const enabledFrom = enabledFromInput ? enabledFromInput.value : '';
+            const enabledUntil = enabledUntilInput ? enabledUntilInput.value : '';
             
             if (!name) {
+                openSimulatorCreateModal();
                 showNotification('Escribe el nombre del simulador', 'error');
                 return;
             }
@@ -1102,13 +1755,21 @@ function createQuestionCard(question) {
                 const response = await fetch('/api/simulators', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ name, time_limit: timeLimit })
+                    body: JSON.stringify({
+                        name,
+                        time_limit: timeLimit,
+                        enabled_from: enabledFrom,
+                        enabled_until: enabledUntil
+                    })
                 });
                 const data = await response.json();
                 
                 if (data.success) {
                     showNotification('Simulador guardado', 'success');
                     nameInput.value = '';
+                    if (enabledFromInput) enabledFromInput.value = '';
+                    if (enabledUntilInput) enabledUntilInput.value = '';
+                    closeSimulatorCreateModal();
                     await loadSimulatorsPage();
                 } else {
                     showNotification(data.error || 'Error al guardar simulador', 'error');
@@ -1120,19 +1781,59 @@ function createQuestionCard(question) {
         }
 
         async function handleSimulatorListClick(e) {
-            const saveBtn = e.target.closest('button[data-action="save-sim"]');
+            const editBtn = e.target.closest('button[data-action="edit-sim"]');
             const deleteBtn = e.target.closest('button[data-action="delete-sim"]');
-            if (!saveBtn && !deleteBtn) return;
+            const toggleForceBtn = e.target.closest('button[data-action="toggle-force"]');
+            const attendanceBtn = e.target.closest('button[data-action="attendance-sim"]');
+            const toggleMenuBtn = e.target.closest('button[data-action="toggle-sim-menu"]');
+            if (!editBtn && !deleteBtn && !toggleForceBtn && !toggleMenuBtn && !attendanceBtn) return;
             
             const card = e.target.closest('.simulator-admin-card');
             if (!card) return;
+
+            if (toggleMenuBtn) {
+                const menu = card.querySelector('.simulator-actions-menu');
+                if (!menu) return;
+                document.querySelectorAll('.simulator-actions-menu.open').forEach(m => {
+                    if (m !== menu) m.classList.remove('open');
+                });
+                menu.classList.toggle('open');
+                return;
+            }
             
             const name = card.dataset.name;
-            const nameInput = card.querySelector('.simulator-name-input');
-            const input = card.querySelector('.simulator-time-input');
-            const timeLimit = parseInt(input.value, 10);
+            const isForceEnabled = card.dataset.forceEnabled === '1';
+
+            if (attendanceBtn) {
+                openSimulatorAttendanceModal(name);
+                return;
+            }
+
+            if (toggleForceBtn) {
+                const nextForceEnabled = !isForceEnabled;
+                try {
+                    const response = await fetch(`/api/simulators/${encodeURIComponent(name)}/force-enable`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ force_enabled: nextForceEnabled })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showNotification(nextForceEnabled ? 'Simulador habilitado manualmente' : 'Simulador volvió a usar fechas', 'success');
+                        await loadSimulatorsPage();
+                    } else {
+                        showNotification(data.error || 'Error al actualizar estado', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error cambiando estado forzado:', error);
+                    showNotification('Error de conexión', 'error');
+                }
+                return;
+            }
 
             if (deleteBtn) {
+                const actionsMenu = card.querySelector('.simulator-actions-menu');
+                if (actionsMenu) actionsMenu.classList.remove('open');
                 if (!confirm(`¿Eliminar simulador "${name}"? Esto borrará sus preguntas.`)) return;
                 try {
                     const response = await fetch(`/api/simulators/${encodeURIComponent(name)}`, {
@@ -1151,24 +1852,134 @@ function createQuestionCard(question) {
                 }
                 return;
             }
-            
+
+            if (editBtn) {
+                const actionsMenu = card.querySelector('.simulator-actions-menu');
+                if (actionsMenu) actionsMenu.classList.remove('open');
+                openSimulatorEditModal({
+                    name: card.dataset.name || '',
+                    time_limit: parseInt(card.dataset.timeLimit || '30', 10),
+                    enabled_from: card.dataset.enabledFrom || '',
+                    enabled_until: card.dataset.enabledUntil || ''
+                });
+            }
+        }
+
+        function openSimulatorAttendanceModal(simulatorName) {
+            const modal = document.getElementById('simulatorAttendanceModal');
+            const input = document.getElementById('attendanceSimulatorName');
+            if (!modal || !input) return;
+            input.value = simulatorName || '';
+            modal.classList.add('active');
+            loadSimulatorAttendance(simulatorName);
+        }
+
+        function closeSimulatorAttendanceModal() {
+            const modal = document.getElementById('simulatorAttendanceModal');
+            if (!modal) return;
+            modal.classList.remove('active');
+        }
+
+        async function loadSimulatorAttendance(simulatorName) {
+            const body = document.getElementById('simulatorAttendanceBody');
+            const summary = document.getElementById('attendanceSummary');
+            const groupFilter = document.getElementById('attendanceGroupFilter');
+            if (!body || !summary || !groupFilter || !simulatorName) return;
+
+            const selectedGroup = (groupFilter.value || 'todos').trim();
+            const params = selectedGroup && selectedGroup !== 'todos' ? `?group=${encodeURIComponent(selectedGroup)}` : '';
+
+            body.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Cargando...</td></tr>';
             try {
-                const response = await fetch(`/api/simulators/${encodeURIComponent(name)}`, {
+                const response = await fetch(`/api/simulators/${encodeURIComponent(simulatorName)}/attendance${params}`);
+                const data = await response.json();
+                if (!data.success) {
+                    body.innerHTML = `<tr><td colspan="6" style="text-align:center; color: var(--danger);">${escapeHtml(data.error || 'Error al cargar')}</td></tr>`;
+                    return;
+                }
+
+                const currentValue = groupFilter.value || 'todos';
+                const groups = Array.isArray(data.groups) ? data.groups : [];
+                groupFilter.innerHTML = '<option value="todos">Todos los grupos</option>';
+                groups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group.name;
+                    option.textContent = `${group.name} (${group.count || 0})`;
+                    groupFilter.appendChild(option);
+                });
+                if ([...groupFilter.options].some(opt => opt.value === currentValue)) {
+                    groupFilter.value = currentValue;
+                }
+
+                summary.textContent = `Completados: ${data.completed_students || 0} | Pendientes: ${data.pending_students || 0} | Total: ${data.total_students || 0}`;
+
+                const rows = Array.isArray(data.rows) ? data.rows : [];
+                if (rows.length === 0) {
+                    body.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">No hay alumnos para este filtro</td></tr>';
+                    return;
+                }
+
+                body.innerHTML = rows.map((row, idx) => {
+                    const completed = (row.status || '').toLowerCase() === 'completado';
+                    return `
+                        <tr>
+                            <td>${idx + 1}</td>
+                            <td>${escapeHtml(row.name || 'Alumno')}</td>
+                            <td>${escapeHtml(row.group || '-')}</td>
+                            <td><span class="attendance-status ${completed ? 'completed' : 'pending'}">${completed ? 'Completado' : 'Pendiente'}</span></td>
+                            <td>${escapeHtml(row.score || '-')}</td>
+                            <td>${row.finished_at ? formatDateTimeLocal(row.finished_at) : '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error cargando asistencia de simulador:', error);
+                body.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--danger);">Error de conexión</td></tr>';
+            }
+        }
+
+        async function saveSimulatorEdit() {
+            const originalNameEl = document.getElementById('editSimulatorOriginalName');
+            const nameEl = document.getElementById('editSimulatorName');
+            const timeEl = document.getElementById('editSimulatorTime');
+            const fromEl = document.getElementById('editSimulatorEnabledFrom');
+            const untilEl = document.getElementById('editSimulatorEnabledUntil');
+            if (!originalNameEl || !nameEl || !timeEl || !fromEl || !untilEl) return;
+
+            const originalName = (originalNameEl.value || '').trim();
+            const newName = (nameEl.value || '').trim();
+            const timeLimit = parseInt(timeEl.value, 10);
+            const enabledFrom = fromEl.value || '';
+            const enabledUntil = untilEl.value || '';
+
+            if (!originalName || !newName) {
+                showNotification('Escribe el nombre del simulador', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/simulators/${encodeURIComponent(originalName)}`, {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ time_limit: timeLimit, new_name: nameInput ? nameInput.value.trim() : '' })
+                    body: JSON.stringify({
+                        time_limit: timeLimit,
+                        new_name: newName,
+                        enabled_from: enabledFrom,
+                        enabled_until: enabledUntil
+                    })
                 });
                 const data = await response.json();
-                
+
                 if (data.success) {
-                    showNotification('Tiempo actualizado', 'success');
+                    showNotification('Simulador actualizado', 'success');
+                    closeSimulatorEditModal();
                     await loadSimulatorsPage();
                 } else {
                     showNotification(data.error || 'Error al actualizar', 'error');
                 }
             } catch (error) {
                 console.error('Error actualizando simulador:', error);
-                showNotification('Error de conexiÃ³n', 'error');
+                showNotification('Error de conexión', 'error');
             }
         }
         
@@ -1350,7 +2161,7 @@ function displayStudyQuestion(question) {
                      alt="Imagen del ejercicio" 
                      class="question-image"
                      onclick="expandQuestionImage('${imageUrl}')"
-                     style="max-width: 100%; max-height: 250px; border-radius: 8px; cursor: pointer; transition: transform 0.3s ease;">
+                     style="max-width: 100%; max-height: 180px; border-radius: 8px; cursor: pointer; transition: transform 0.3s ease;">
             </div>
         `;
     }
@@ -1513,6 +2324,8 @@ function displayStudyQuestion(question) {
             document.getElementById('modalIsSimulator').checked = false;
             document.getElementById('modalSimulatorName').value = '';
             document.getElementById('modalSimulatorName').style.display = 'none';
+            document.getElementById('modalSimulatorSection').value = '';
+            document.getElementById('modalSimulatorSection').style.display = 'none';
             document.getElementById('simulatorHint').style.display = 'none';
             document.getElementById('modalSubject').disabled = false;
              // Limpiar imagen
@@ -1560,6 +2373,7 @@ function displayStudyQuestion(question) {
             document.getElementById('modalUniversity').value = question.university || 'UNAM';
             document.getElementById('modalIsSimulator').checked = question.subject === 'Simulador';
             document.getElementById('modalSimulatorName').value = question.subject === 'Simulador' ? question.topic : '';
+            document.getElementById('modalSimulatorSection').value = question.simulator_subject || '';
             toggleSimulatorMode();
             
             if (question.has_options && question.options && question.options.length > 0) {
@@ -1598,6 +2412,7 @@ async function saveQuestion() {
     let topic = document.getElementById('modalTopic').value.trim();
     const isSimulator = document.getElementById('modalIsSimulator').checked;
     const simulatorName = document.getElementById('modalSimulatorName').value.trim();
+    const simulatorSection = (document.getElementById('modalSimulatorSection')?.value || '').trim();
     const questionText = document.getElementById('modalQuestion').value.trim();
     
     const universitySelect = document.getElementById('modalUniversity').value;
@@ -1608,6 +2423,10 @@ async function saveQuestion() {
     if (isSimulator) {
         if (!simulatorName) {
             showNotification('El nombre del simulador es requerido', 'error');
+            return;
+        }
+        if (!simulatorSection) {
+            showNotification('Selecciona la materia interna del simulador', 'error');
             return;
         }
         finalSubject = 'Simulador';
@@ -1625,6 +2444,7 @@ async function saveQuestion() {
     // Agregar campos de texto
     formData.append('subject', finalSubject);
     formData.append('topic', topic);
+    formData.append('simulator_subject', isSimulator ? simulatorSection : '');
     formData.append('question', questionText);
     formData.append('university', finalUniversity);
     formData.append('solution', document.getElementById('modalSolution').value.trim());
@@ -1692,6 +2512,7 @@ async function saveQuestion() {
             const questionData = {
                 subject: finalSubject,
                 topic: topic,
+                simulator_subject: isSimulator ? simulatorSection : '',
                 question: questionText,
                 university: finalUniversity,
                 solution: document.getElementById('modalSolution').value.trim(),
@@ -1967,9 +2788,14 @@ document.addEventListener('DOMContentLoaded', function() {
         let topic = document.getElementById('bulkTopic').value.trim();
         const isSimulator = document.getElementById('bulkIsSimulator').checked;
         const simulatorName = document.getElementById('bulkSimulatorName').value.trim();
+        const simulatorSection = (document.getElementById('bulkSimulatorSection')?.value || '').trim();
         if (isSimulator) {
             if (!simulatorName) {
                 showNotification('Escribe el nombre del simulador', 'warning');
+                return;
+            }
+            if (!simulatorSection) {
+                showNotification('Selecciona la materia interna del simulador', 'warning');
                 return;
             }
             finalSubject = 'Simulador';
@@ -2010,7 +2836,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     texto: texto,
                     subject: finalSubject,
                     topic: topic,
-                    university: university
+                    university: university,
+                    simulator_subject: isSimulator ? simulatorSection : ''
                 })
             });
             
@@ -2344,9 +3171,14 @@ function editQuestion(questionId) {
     // Cargar datos básicos
     document.getElementById('modalSubject').value = question.subject;
     document.getElementById('modalTopic').value = question.topic;
+    loadModalTopics(question.subject);
     document.getElementById('modalQuestion').value = question.question;
     document.getElementById('modalSolution').value = question.solution || '';
     document.getElementById('modalUniversity').value = question.university || 'UNAM';
+    document.getElementById('modalIsSimulator').checked = question.subject === 'Simulador';
+    document.getElementById('modalSimulatorName').value = question.subject === 'Simulador' ? question.topic : '';
+    document.getElementById('modalSimulatorSection').value = question.simulator_subject || '';
+    toggleSimulatorMode();
     
     // Cargar imagen existente si hay
     if (question.image) {

@@ -51,17 +51,21 @@
                 <i class="fas fa-chart-bar"></i>
                 <span>Estadísticas</span>
             </div>
-            <div class="menu-item" data-page="study">
-                <i class="fas fa-book-open"></i>
-                <span>Modo Estudio</span>
-            </div>
             <div class="menu-item" data-page="simulators">
                 <i class="fas fa-clipboard-check"></i>
                 <span>Simuladores</span>
             </div>
+            <div class="menu-item" data-page="students">
+                <i class="fas fa-users"></i>
+                <span>Alumnos</span>
+            </div>
             <div class="menu-item" id="openModalBtn">
                 <i class="fas fa-plus-circle"></i>
                 <span>Nueva Pregunta</span>
+            </div>
+            <div class="menu-item" id="openStudentModalMenuBtn">
+                <i class="fas fa-user-plus"></i>
+                <span>Nuevo Alumno</span>
             </div>
         </nav>
         
@@ -125,9 +129,9 @@
                     <button class="btn btn-ghost" id="showHelpBtn">
                         <i class="fas fa-question-circle"></i>
                     </button>
-                    <button class="btn btn-primary" id="openModalFromListBtn">
-                        <i class="fas fa-plus"></i>
-                        Nueva Pregunta
+                    <button class="btn btn-outline" id="openStudentModalBtn">
+                        <i class="fas fa-user-plus"></i>
+                        Nuevo Alumno
                     </button>
                     <!-- En el page-header de la página de preguntas, añade esto junto a los otros botones -->
                     <button class="btn btn-success" onclick="openBulkModal()" style="margin-left: 10px;">
@@ -292,6 +296,53 @@
                 </div>
             </div>
         </div>
+
+        <!-- Página: Alumnos -->
+        <div class="page" id="studentsPage">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h2 class="page-title">
+                        <i class="fas fa-users"></i>
+                        Alumnos
+                    </h2>
+                    <p class="page-subtitle">Consulta alumnos y filtra por grupo</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-outline btn-sm" id="refreshStudentsBtn">
+                        <i class="fas fa-sync"></i> Recargar
+                    </button>
+                    <button class="btn btn-primary" id="openStudentModalFromStudentsBtn">
+                        <i class="fas fa-user-plus"></i> Nuevo Alumno
+                    </button>
+                </div>
+            </div>
+
+            <div class="study-selector" style="margin-bottom: 18px;">
+                <div class="study-selector-header">
+                    <div class="section-title">
+                        <i class="fas fa-layer-group"></i>
+                        <span>Grupos</span>
+                    </div>
+                </div>
+                <div class="study-selector-body" style="padding-top: 10px;">
+                    <div class="subjects-grid" id="studentGroupsButtons">
+                        <!-- Botones de grupo -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="questions-grid" id="studentsList">
+                <!-- Alumnos se cargan dinámicamente -->
+            </div>
+
+            <div id="noStudentsMessage" class="empty-state" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-user-slash"></i>
+                </div>
+                <h3>No hay alumnos</h3>
+                <p>No se encontraron alumnos con el grupo seleccionado</p>
+            </div>
+        </div>
         
         <!-- Página: Simuladores -->
         <div class="page" id="simulatorsPage">
@@ -312,17 +363,9 @@
             
             <div class="simulators-admin">
                 <div class="simulator-create">
-                    <h3><i class="fas fa-plus-circle"></i> Nuevo simulador</h3>
-                    <div class="form-row" style="display: flex; gap: 12px; flex-wrap: wrap;">
-                        <input type="text" class="form-control" id="newSimulatorName" placeholder="Nombre del simulador">
-                        <input type="number" class="form-control" id="newSimulatorTime" placeholder="Tiempo (min)" min="1" value="30">
-                        <button class="btn btn-primary" id="createSimulatorBtn">
-                            <i class="fas fa-save"></i> Guardar
-                        </button>
-                    </div>
-                    <div class="form-hint">
-                        <i class="fas fa-info-circle"></i> El tiempo es fijo y no lo puede cambiar el alumno.
-                    </div>
+                    <button class="btn btn-primary" id="openSimulatorCreateModalBtn" type="button">
+                        <i class="fas fa-plus-circle"></i> Nuevo simulador
+                    </button>
                 </div>
                 
                 <div class="simulator-list" id="simulatorListAdmin">
@@ -412,14 +455,7 @@
           </div>
         </div>
     
-        <div class="modal-footer">
-          <button class="btn btn-outline" onclick="showModalAnswer()">
-            <i class="fas fa-eye"></i> Ver respuesta
-          </button>
-          <button class="btn btn-primary" onclick="getRandomQuestion()">
-            <i class="fas fa-dice"></i> Nueva pregunta
-          </button>
-        </div>
+        <div class="modal-footer"></div>
       </div>
     </div>
 
@@ -487,8 +523,22 @@
                                placeholder="Nombre del simulador" style="flex: 1; min-width: 220px; display: none;">
                         <datalist id="bulkSimulatorList"></datalist>
                     </div>
+                    <div style="margin-top: 10px;">
+                        <select class="form-control" id="bulkSimulatorSection" style="display: none;">
+                            <option value="">Materia interna del simulador</option>
+                            <option value="Matemáticas">Matemáticas</option>
+                            <option value="Español">Español</option>
+                            <option value="Química">Química</option>
+                            <option value="Biología">Biología</option>
+                            <option value="Pre-medicina">Pre-medicina</option>
+                            <option value="Física">Física</option>
+                            <option value="Historia">Historia</option>
+                            <option value="Geografía">Geografía</option>
+                            <option value="Arte">Arte</option>
+                        </select>
+                    </div>
                     <div class="form-hint" id="bulkSimulatorHint" style="display: none;">
-                        <i class="fas fa-info-circle"></i> Se guardará con materia "Simulador" y tema con este nombre.
+                        <i class="fas fa-info-circle"></i> Se guardará con materia "Simulador", tema con ese nombre y la materia interna seleccionada.
                     </div>
                 </div>
 
@@ -618,8 +668,22 @@ Respuesta: B"
                            placeholder="Nombre del simulador" style="flex: 1; min-width: 220px; display: none;">
                     <datalist id="modalSimulatorList"></datalist>
                 </div>
+                <div style="margin-top: 10px;">
+                    <select class="form-control" id="modalSimulatorSection" style="display: none;">
+                        <option value="">Materia interna del simulador</option>
+                        <option value="Matemáticas">Matemáticas</option>
+                        <option value="Español">Español</option>
+                        <option value="Química">Química</option>
+                        <option value="Biología">Biología</option>
+                        <option value="Pre-medicina">Pre-medicina</option>
+                        <option value="Física">Física</option>
+                        <option value="Historia">Historia</option>
+                        <option value="Geografía">Geografía</option>
+                        <option value="Arte">Arte</option>
+                    </select>
+                </div>
                 <div class="form-hint" id="simulatorHint" style="display: none;">
-                    <i class="fas fa-info-circle"></i> Se guardarÃ¡ con materia "Simulador" y tema con este nombre.
+                    <i class="fas fa-info-circle"></i> Se guardará con materia "Simulador", tema con el nombre del simulador y la materia interna seleccionada.
                 </div>
             </div>
                             
@@ -974,6 +1038,183 @@ Respuesta: B"
             </div>
             <div class="modal-footer">
                 <button class="btn btn-primary">Entendido</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="studentModal">
+        <div class="modal" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-user-plus"></i> Nuevo Alumno</h3>
+                <button class="modal-close" id="closeStudentModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="studentNombre"><i class="fas fa-user"></i> Nombre</label>
+                    <input type="text" class="form-control" id="studentNombre" placeholder="Nombre">
+                </div>
+                <div class="form-group">
+                    <label for="studentApellido"><i class="fas fa-user"></i> Apellido</label>
+                    <input type="text" class="form-control" id="studentApellido" placeholder="Apellido">
+                </div>
+                <div class="form-group">
+                    <label for="studentEmail"><i class="fas fa-envelope"></i> Correo</label>
+                    <input type="email" class="form-control" id="studentEmail" placeholder="correo@dominio.com">
+                </div>
+                <div class="form-group">
+                    <label for="studentPassword"><i class="fas fa-lock"></i> Contraseña</label>
+                    <input type="password" class="form-control" id="studentPassword" placeholder="Contraseña">
+                </div>
+                <div class="form-group">
+                    <label for="studentGroup"><i class="fas fa-users"></i> Grupo</label>
+                    <input type="text" class="form-control" id="studentGroup" placeholder="Ej: A1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelStudentModalBtn">Cancelar</button>
+                <button class="btn btn-primary" id="createStudentBtn">
+                    <i class="fas fa-save"></i> Registrar Alumno
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="studentCredentialsModal">
+        <div class="modal" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-id-card"></i> Datos del Alumno</h3>
+                <button class="modal-close" id="closeStudentCredentialsModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 12px; color: var(--text-secondary);">
+                    Comparte estos datos con el alumno:
+                </p>
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px;">
+                    <div style="margin-bottom: 8px;"><strong>Correo:</strong> <span id="studentCredentialsEmail">-</span></div>
+                    <div><strong>Contraseña:</strong> <span id="studentCredentialsPassword">-</span></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="closeStudentCredentialsBtn">Cerrar</button>
+                <button class="btn btn-primary" id="copyStudentCredentialsBtn">
+                    <i class="fas fa-copy"></i> Copiar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="groupDeleteModal">
+        <div class="modal" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Eliminar Grupo</h3>
+                <button class="modal-close" id="closeGroupDeleteModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="groupDeleteWarningText" style="margin-bottom: 10px; color: var(--text-secondary);"></p>
+                <p style="margin-bottom: 10px; color: var(--text-secondary);">
+                    Escribe el nombre del grupo para confirmar:
+                </p>
+                <input type="text" class="form-control" id="groupDeleteConfirmInput" placeholder="Nombre del grupo">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelGroupDeleteBtn">Cancelar</button>
+                <button class="btn btn-danger" id="confirmGroupDeleteBtn">
+                    <i class="fas fa-trash"></i> Eliminar Grupo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="simulatorCreateModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-plus-circle"></i> Nuevo Simulador</h3>
+                <button class="modal-close" id="closeSimulatorCreateModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <input type="text" class="form-control" id="newSimulatorName" placeholder="Nombre del simulador">
+                    <input type="number" class="form-control" id="newSimulatorTime" placeholder="Tiempo (min)" min="1" value="30">
+                    <input type="datetime-local" class="form-control" id="newSimulatorEnabledFrom" title="Fecha/hora de habilitación">
+                    <input type="datetime-local" class="form-control" id="newSimulatorEnabledUntil" title="Fecha/hora de cierre">
+                </div>
+                <div class="form-hint" style="margin-top: 8px;">
+                    <i class="fas fa-info-circle"></i> El simulador será visible para alumnos, pero solo se puede abrir dentro de la ventana de habilitación.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelSimulatorCreateModalBtn">Cancelar</button>
+                <button class="btn btn-primary" id="createSimulatorBtn">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="simulatorEditModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-pen"></i> Editar Simulador</h3>
+                <button class="modal-close" id="closeSimulatorEditModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editSimulatorOriginalName">
+                <div class="form-row" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <input type="text" class="form-control" id="editSimulatorName" placeholder="Nombre del simulador">
+                    <input type="number" class="form-control" id="editSimulatorTime" placeholder="Tiempo (min)" min="1" value="30">
+                    <input type="datetime-local" class="form-control" id="editSimulatorEnabledFrom" title="Fecha/hora de habilitación">
+                    <input type="datetime-local" class="form-control" id="editSimulatorEnabledUntil" title="Fecha/hora de cierre">
+                </div>
+                <div class="form-hint" style="margin-top: 8px;">
+                    <i class="fas fa-info-circle"></i> Aquí puedes actualizar nombre, duración y ventana de disponibilidad.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelSimulatorEditModalBtn">Cancelar</button>
+                <button class="btn btn-primary" id="saveSimulatorEditBtn">
+                    <i class="fas fa-save"></i> Guardar cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="simulatorAttendanceModal">
+        <div class="modal" style="max-width: 980px;">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-user-check"></i> Control de Aplicación</h3>
+                <button class="modal-close" id="closeSimulatorAttendanceModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="attendanceSimulatorName">
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
+                    <select class="form-control" id="attendanceGroupFilter" style="max-width: 220px;">
+                        <option value="todos">Todos los grupos</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" id="refreshAttendanceBtn">
+                        <i class="fas fa-sync"></i> Recargar
+                    </button>
+                    <span id="attendanceSummary" class="form-hint"></span>
+                </div>
+                <div class="simulator-attendance-table-wrap">
+                    <table class="simulator-attendance-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Alumno</th>
+                                <th>Grupo</th>
+                                <th>Estado</th>
+                                <th>Puntaje</th>
+                                <th>Finalizó</th>
+                            </tr>
+                        </thead>
+                        <tbody id="simulatorAttendanceBody">
+                            <tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Sin datos</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="closeSimulatorAttendanceBtn">Cerrar</button>
             </div>
         </div>
     </div>
