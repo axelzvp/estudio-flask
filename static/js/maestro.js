@@ -21,6 +21,7 @@
         let studySelectedSubject = 'todos';
         let studySelectedTopic = 'todos';
         let currentImageFile = null;
+        let adminResultsCache = [];
 let existingImageUrl = null;
         
         // Verificar autenticación y rol
@@ -84,6 +85,8 @@ let existingImageUrl = null;
                         loadStatsPage();
                     } else if (this.dataset.page === 'simulators') {
                         loadSimulatorsPage();
+                    } else if (this.dataset.page === 'results') {
+                        loadResultsPage();
                     } else if (this.dataset.page === 'students') {
                         loadStudentsPage();
                     }
@@ -292,6 +295,10 @@ let existingImageUrl = null;
             if (refreshSimBtn) {
                 refreshSimBtn.addEventListener('click', loadSimulatorsPage);
             }
+            const refreshResultsBtn = document.getElementById('refreshResultsBtn');
+            if (refreshResultsBtn) {
+                refreshResultsBtn.addEventListener('click', loadResultsPage);
+            }
             const createSimBtn = document.getElementById('createSimulatorBtn');
             if (createSimBtn) {
                 createSimBtn.addEventListener('click', createSimulator);
@@ -369,6 +376,26 @@ let existingImageUrl = null;
             const simulatorList = document.getElementById('simulatorListAdmin');
             if (simulatorList) {
                 simulatorList.addEventListener('click', handleSimulatorListClick);
+            }
+            const resultsList = document.getElementById('resultsListsAdmin');
+            if (resultsList) {
+                resultsList.addEventListener('click', handleResultsListClick);
+            }
+            const closeResultsAdminModalBtn = document.getElementById('closeResultsAdminModalBtn');
+            if (closeResultsAdminModalBtn) {
+                closeResultsAdminModalBtn.addEventListener('click', closeResultsAdminModal);
+            }
+            const closeResultsAdminModalFooterBtn = document.getElementById('closeResultsAdminModalFooterBtn');
+            if (closeResultsAdminModalFooterBtn) {
+                closeResultsAdminModalFooterBtn.addEventListener('click', closeResultsAdminModal);
+            }
+            const resultsAdminModal = document.getElementById('resultsAdminModal');
+            if (resultsAdminModal) {
+                resultsAdminModal.addEventListener('click', function(e) {
+                    if (e.target === resultsAdminModal) {
+                        closeResultsAdminModal();
+                    }
+                });
             }
             const refreshStudentsBtn = document.getElementById('refreshStudentsBtn');
             if (refreshStudentsBtn) {
@@ -1401,6 +1428,181 @@ function createQuestionCard(question) {
                 console.error('Error cargando simuladores:', error);
                 showNotification('Error de conexiÃ³n', 'error');
             }
+        }
+
+        async function loadResultsPage() {
+            const container = document.getElementById('resultsListsAdmin');
+            if (container) {
+                container.innerHTML = '<div class="empty-state">Cargando resultados...</div>';
+            }
+
+            try {
+                const response = await fetch('/api/simulators');
+                const data = await response.json();
+                if (!data.success) {
+                    if (container) {
+                        container.innerHTML = '<div class="empty-state">No se pudieron cargar los simuladores.</div>';
+                    }
+                    showNotification(data.error || 'Error al cargar simuladores', 'error');
+                    return;
+                }
+
+                const simulators = Array.isArray(data.simulators) ? data.simulators : [];
+                if (simulators.length === 0) {
+                    if (container) {
+                        container.innerHTML = '<div class="empty-state">No hay simuladores registrados.</div>';
+                    }
+                    return;
+                }
+
+                const sorted = [...simulators].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'es'));
+                const resultEntries = await Promise.all(sorted.map(async (sim) => {
+                    const name = String(sim.name || '').trim();
+                    if (!name) {
+                        return {
+                            simulator: '',
+                            sections: [],
+                            results: [],
+                            error: 'Nombre de simulador invalido'
+                        };
+                    }
+                    try {
+                        const res = await fetch(`/api/simulators/${encodeURIComponent(name)}/results`);
+                        const payload = await res.json();
+                        if (!payload.success) {
+                            return {
+                                simulator: name,
+                                sections: [],
+                                results: [],
+                                error: payload.error || 'No se pudieron cargar resultados'
+                            };
+                        }
+                        return {
+                            simulator: payload.simulator || name,
+                            sections: Array.isArray(payload.sections) ? payload.sections : [],
+                            results: Array.isArray(payload.results) ? payload.results : []
+                        };
+                    } catch (error) {
+                        console.error(`Error cargando resultados para ${name}:`, error);
+                        return {
+                            simulator: name,
+                            sections: [],
+                            results: [],
+                            error: 'Error de conexion'
+                        };
+                    }
+                }));
+
+                adminResultsCache = resultEntries;
+                renderResultsListsAdmin(resultEntries);
+            } catch (error) {
+                console.error('Error cargando resultados de simuladores:', error);
+                if (container) {
+                    container.innerHTML = '<div class="empty-state">Error de conexion al cargar resultados.</div>';
+                }
+                showNotification('Error de conexion', 'error');
+            }
+        }
+
+        function renderResultsListsAdmin(entries) {
+            const container = document.getElementById('resultsListsAdmin');
+            if (!container) return;
+
+            if (!Array.isArray(entries) || entries.length === 0) {
+                container.innerHTML = '<div class="empty-state">No hay resultados para mostrar.</div>';
+                return;
+            }
+
+            container.innerHTML = entries.map((entry, idx) => {
+                const simulatorName = escapeHtml(entry.simulator || 'Simulador');
+                const rows = Array.isArray(entry.results) ? entry.results : [];
+                const badgeText = `${rows.length} alumno(s)`;
+                return `
+                    <button type="button" class="results-admin-card-btn" data-action="open-results-modal" data-index="${idx}">
+                        <div class="results-admin-summary">
+                            <div class="results-admin-summary-main">
+                                <h3>${simulatorName}</h3>
+                                <div class="results-admin-meta ${entry.error ? 'error' : ''}">${entry.error ? 'Error al cargar resultados' : badgeText}</div>
+                            </div>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function handleResultsListClick(e) {
+            const openBtn = e.target.closest('button[data-action="open-results-modal"]');
+            if (!openBtn) return;
+            const idx = parseInt(openBtn.dataset.index || '-1', 10);
+            if (Number.isNaN(idx) || idx < 0) return;
+            openResultsAdminModal(idx);
+        }
+
+        function openResultsAdminModal(index) {
+            const modal = document.getElementById('resultsAdminModal');
+            const title = document.getElementById('resultsAdminModalTitle');
+            const badge = document.getElementById('resultsAdminModalBadge');
+            const wrap = document.getElementById('resultsAdminModalTableWrap');
+            if (!modal || !title || !badge || !wrap) return;
+
+            const entry = adminResultsCache[index];
+            if (!entry) return;
+
+            const simulatorName = escapeHtml(entry.simulator || 'Simulador');
+            title.innerHTML = `<i class="fas fa-table"></i> Resultados: ${simulatorName}`;
+
+            if (entry.error) {
+                badge.textContent = 'Error';
+                badge.classList.add('error');
+                wrap.innerHTML = `<div class="empty-state">${escapeHtml(entry.error)}</div>`;
+                modal.classList.add('active');
+                return;
+            }
+
+            const rows = Array.isArray(entry.results) ? entry.results : [];
+            const sections = Array.isArray(entry.sections) ? entry.sections : [];
+            badge.textContent = `${rows.length} alumno(s)`;
+            badge.classList.remove('error');
+
+            if (rows.length === 0) {
+                wrap.innerHTML = '<div class="empty-state">Aun no hay intentos registrados en este simulador.</div>';
+                modal.classList.add('active');
+                return;
+            }
+
+            const headers = ['#', 'Alumno', 'Grupo', ...sections, 'Total', 'Finalizo'];
+            const thead = `<thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>`;
+            const tbody = rows.map(row => {
+                const sectionCells = sections.map(section => {
+                    const stats = row.section_scores && row.section_scores[section]
+                        ? row.section_scores[section]
+                        : { correct: 0, total: 0 };
+                    return `<td>${parseInt(stats.correct || 0, 10)}/${parseInt(stats.total || 0, 10)}</td>`;
+                }).join('');
+                return `
+                    <tr>
+                        <td>${parseInt(row.position || 0, 10) || '-'}</td>
+                        <td>${escapeHtml(row.student_name || 'Alumno')}</td>
+                        <td>${escapeHtml(row.student_group || '-')}</td>
+                        ${sectionCells}
+                        <td>${parseInt(row.correct || 0, 10)}/${parseInt(row.total || 0, 10)}</td>
+                        <td>${row.finished_at ? formatDateTimeLocal(row.finished_at) : '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            wrap.innerHTML = `
+                <table class="results-admin-table">
+                    ${thead}
+                    <tbody>${tbody}</tbody>
+                </table>
+            `;
+            modal.classList.add('active');
+        }
+
+        function closeResultsAdminModal() {
+            const modal = document.getElementById('resultsAdminModal');
+            if (modal) modal.classList.remove('active');
         }
 
         async function loadStudentsPage() {

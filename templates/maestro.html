@@ -55,13 +55,13 @@
                 <i class="fas fa-clipboard-check"></i>
                 <span>Simuladores</span>
             </div>
+            <div class="menu-item" data-page="results">
+                <i class="fas fa-table"></i>
+                <span>Resultados</span>
+            </div>
             <div class="menu-item" data-page="students">
                 <i class="fas fa-users"></i>
                 <span>Alumnos</span>
-            </div>
-            <div class="menu-item" id="openModalBtn">
-                <i class="fas fa-plus-circle"></i>
-                <span>Nueva Pregunta</span>
             </div>
             <div class="menu-item" id="openStudentModalMenuBtn">
                 <i class="fas fa-user-plus"></i>
@@ -371,6 +371,27 @@
                 <div class="simulator-list" id="simulatorListAdmin">
                     <!-- Simuladores se cargan dinámicamente -->
                 </div>
+            </div>
+        </div>
+
+        <!-- Página: Resultados -->
+        <div class="page" id="resultsPage">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h2 class="page-title">
+                        <i class="fas fa-table"></i>
+                        Resultados de Simuladores
+                    </h2>
+                    <p class="page-subtitle">Listas completas por simulador para revisar desempeño de alumnos</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-outline btn-sm" id="refreshResultsBtn">
+                        <i class="fas fa-sync"></i> Recargar
+                    </button>
+                </div>
+            </div>
+            <div class="results-admin-list" id="resultsListsAdmin">
+                <!-- Tablas por simulador -->
             </div>
         </div>
 
@@ -1215,6 +1236,26 @@ Respuesta: B"
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="closeSimulatorAttendanceBtn">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="resultsAdminModal">
+        <div class="modal" style="max-width: 1080px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="resultsAdminModalTitle"><i class="fas fa-table"></i> Resultados</h3>
+                <button class="modal-close" id="closeResultsAdminModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+                    <span class="results-admin-badge" id="resultsAdminModalBadge">0 alumno(s)</span>
+                </div>
+                <div class="results-admin-table-wrap" id="resultsAdminModalTableWrap">
+                    <div class="empty-state">Sin datos</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="closeResultsAdminModalFooterBtn">Cerrar</button>
             </div>
         </div>
     </div>

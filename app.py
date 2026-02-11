@@ -1325,6 +1325,7 @@ def get_simulator_results(simulator_name):
                 ),
                 'correct': int(attempt.get('correct', 0) or 0),
                 'total': int(attempt.get('total', 0) or 0),
+                'finished_at': datetime_to_iso_utc(attempt.get('finished_at')) if attempt.get('finished_at') else None,
                 'section_scores': section_scores
             })
 
