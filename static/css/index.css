@@ -72,6 +72,12 @@ body {
     color: var(--dark);
 }
 
+@media (max-width: 768px) {
+    .logo-text {
+        display: none;
+    }
+}
+
 .page-subtitle {
     color: var(--gray);
     font-size: 0.8rem;
@@ -593,6 +599,81 @@ body {
     padding: 0.9rem;
 }
 
+.action-btn.secondary {
+    background: #f1f5f9;
+    color: #334155;
+    box-shadow: none;
+    border: 1px solid #cbd5e1;
+}
+
+.study-modal.simulator-mode-choice-modal {
+    max-width: 420px;
+    width: min(92vw, 420px);
+    margin: auto;
+    height: auto;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.simulator-mode-choice-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.55rem;
+}
+
+.simulator-mode-choice-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.simulator-mode-choice-title {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    color: var(--dark);
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.simulator-mode-choice-body p {
+    color: var(--gray);
+    font-size: 0.75rem;
+}
+
+.simulator-mode-hint {
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--gray);
+    line-height: 1.3;
+}
+
+.simulator-mode-choice-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+    justify-items: center;
+}
+
+.simulator-mode-choice-actions .action-btn {
+    width: auto;
+    max-width: none;
+    min-width: 180px;
+}
+
+.simulator-exam-mode-btn {
+    background: linear-gradient(135deg, var(--danger), #b91c1c);
+}
+
+#simulatorModeChoiceModal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
 /* ====== MODAL ESTUDIO ====== */
 .modal-overlay {
     position: fixed;
@@ -991,12 +1072,97 @@ body {
 .exam-progress {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
     flex: 1;
 }
 
+#examProgressText {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--dark);
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.exam-active-modal.simulator-header-mode .exam-info {
+    min-width: 0;
+    gap: 0.55rem;
+    flex: 1;
+    flex-wrap: nowrap;
+}
+
+.exam-active-modal.simulator-header-mode .exam-progress {
+    display: none;
+}
+
+.exam-simulator-name {
+    display: none;
+}
+
+.exam-header-subject {
+    display: none;
+}
+
+
+.exam-active-modal.simulator-header-mode #examProgressText {
+    order: 2;
+    font-size: 0.95rem;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.exam-active-modal.simulator-header-mode .exam-timer {
+    order: 3;
+    position: static;
+    left: auto;
+    top: auto;
+    transform: none;
+    flex-shrink: 0;
+    margin-left: auto;
+    z-index: auto;
+}
+
+.exam-active-modal.simulator-header-mode #finishExamBtn {
+    min-height: 28px;
+    padding: 0.24rem 0.46rem;
+    border-radius: 14px;
+    white-space: nowrap;
+    font-size: 0.66rem;
+    gap: 4px;
+    flex: 0 0 auto;
+    width: auto;
+    margin-left: 0;
+}
+
+.exam-active-modal.simulator-header-mode #finishExamBtn i {
+    font-size: 0.7rem;
+}
+
+.exam-active-modal.simulator-header-mode .exam-timer {
+    flex-shrink: 0;
+}
+
+.exam-active-modal.simulator-header-mode .exam-info {
+    align-items: center;
+}
+
+.exam-active-modal.simulator-header-mode .exam-header {
+    position: relative;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.exam-active-modal.simulator-header-mode .exam-header-subject {
+    display: none;
+}
+
+.exam-active-modal.simulator-header-mode .exam-question-header .question-badges {
+    display: flex;
+}
+
+
 .progress-bar {
     flex: 1;
+    min-width: 90px;
     height: 6px;
     background: var(--gray-light);
     border-radius: 3px;
@@ -1234,6 +1400,29 @@ body {
     flex-shrink: 0;
 }
 
+.simulator-results-header {
+    position: relative;
+    padding-right: 2.2rem;
+}
+
+.results-close-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .results-score {
     font-size: 2.5rem;
     font-weight: 700;
@@ -1399,7 +1588,7 @@ body {
 
 .question-image {
     max-width: 100%;
-    max-height: 400px;
+    max-height: 240px;
     min-height: 100px;
     height: auto;
     width: auto;
@@ -1539,7 +1728,7 @@ body {
 .answer-content img,
 .solution-content img {
     max-width: 100%;
-    max-height: 350px;
+    max-height: 220px;
     height: auto;
     border-radius: 8px;
     margin: 12px 0;
@@ -1556,6 +1745,27 @@ body {
     border: 1px solid var(--gray-light);
     border-radius: 8px;
     background: #fff;
+}
+
+#simulatorResultsModal.active {
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 0.6rem;
+}
+
+#simulatorResultsModal .results-card {
+    margin: 0 auto;
+    align-self: flex-start;
+    max-height: calc(100vh - 1.2rem);
+}
+
+#simulatorResultsModal .results-body {
+    overflow-y: auto;
+}
+
+#simulatorResultsModal .sim-results-table-wrap {
+    max-height: 62vh;
+    overflow-y: auto;
 }
 
 .sim-results-table {
@@ -1583,10 +1793,31 @@ body {
     background: #fcfdff;
 }
 
+@media (max-width: 768px) {
+    .sim-results-table-wrap {
+        overflow-x: hidden;
+    }
+
+    .sim-results-table {
+        min-width: 0;
+        table-layout: fixed;
+    }
+
+    .sim-results-table th,
+    .sim-results-table td {
+        font-size: 0.6rem;
+        padding: 6px 3px;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        line-height: 1.2;
+    }
+}
+
 /* Ajustes de imagen dentro del examen/simulador */
 .exam-question-content img {
     max-width: 100%;
-    max-height: 350px;
+    max-height: 200px;
     height: auto;
     border-radius: 8px;
     margin: 12px auto !important;
@@ -1703,6 +1934,47 @@ body {
     .exam-question-content img {
         max-height: 180px;
     }
+
+    .exam-active-modal.simulator-header-mode .exam-header {
+        position: relative;
+        flex-wrap: nowrap;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-info {
+        min-width: 0;
+        flex: 1;
+        gap: 0.35rem;
+        flex-wrap: nowrap;
+    }
+
+    .exam-active-modal.simulator-header-mode #examProgressText {
+        font-size: 0.72rem;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-header-subject {
+        display: none;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-question-header .question-badges {
+        display: flex;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-timer {
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        margin-left: 0 !important;
+    }
+
+    .exam-active-modal.simulator-header-mode #finishExamBtn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.62rem;
+        min-height: 26px;
+        gap: 3px;
+        flex: 0 0 auto;
+        width: auto;
+    }
 }
 
 @media (max-width: 360px) {
@@ -1735,6 +2007,51 @@ body {
     
     .progress-bar {
         min-width: 50px;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-header {
+        flex-wrap: nowrap;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-info {
+        min-width: 0;
+        flex: 1;
+        gap: 0.35rem;
+        flex-wrap: nowrap;
+    }
+
+    .exam-active-modal.simulator-header-mode #examProgressText {
+        font-size: 0.72rem;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-header-subject {
+        display: none;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-question-header .question-badges {
+        display: flex;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-header {
+        position: relative;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-timer {
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        margin-left: 0 !important;
+    }
+
+
+    .exam-active-modal.simulator-header-mode #finishExamBtn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.62rem;
+        min-height: 26px;
+        gap: 3px;
+        flex: 0 0 auto;
+        width: auto;
     }
     
     .modal-btn,
@@ -1797,6 +2114,49 @@ body {
         width: 90%;
         max-width: 800px;
         height: auto;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-simulator-name {
+        display: inline-flex;
+        order: 1;
+        align-items: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--dark);
+        max-width: 280px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-right: 0.2rem;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-progress {
+        display: none;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-header-subject {
+        display: inline-flex;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--primary);
+        white-space: nowrap;
+        max-width: 50%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        justify-content: center;
+    }
+
+    .exam-active-modal.simulator-header-mode .exam-question-header .question-badges {
+        display: none;
+    }
+
+
+    .study-modal.simulator-mode-choice-modal {
+        width: 420px;
+        max-width: 420px;
     }
     
     .modal-header {

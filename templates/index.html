@@ -254,13 +254,6 @@
             <div class="simulator-grid" id="simulatorList">
                 <!-- Simuladores se cargan dinÃÂ¡micamente -->
             </div>
-            
-            <div class="action-container">
-                <button class="action-btn start-exam-btn" id="startSimulatorBtn">
-                    <i class="fas fa-play-circle"></i>
-                    <span>Comenzar Simulador</span>
-                </button>
-            </div>
         </section>
 
         <!-- Selector de materias (Modo Estudio) -->
@@ -338,6 +331,9 @@
         <div class="exam-header">
 
             <div class="exam-info">
+                <div class="exam-simulator-name" id="examSimulatorName"></div>
+                <span id="examProgressText">Pregunta 0/0</span>
+                <span class="exam-header-subject" id="examHeaderSubject"></span>
 
                 <div class="exam-timer" id="examTimer">
 
@@ -354,8 +350,6 @@
                         <div class="progress-fill" id="examProgressFill" style="width: 0%"></div>
 
                     </div>
-
-                    <span id="examProgressText">Pregunta 0/0</span>
 
                 </div>
 
@@ -470,18 +464,40 @@
 
     <div class="exam-results-modal" id="simulatorResultsModal">
         <div class="results-card">
-            <div class="results-header">
-                <h3 id="simulatorResultsTitle">Resultados del simulador</h3>
+            <div class="results-header simulator-results-header">
+                <button class="results-close-btn" type="button" onclick="closeSimulatorResults()" aria-label="Cerrar">
+                    &times;
+                </button>
+                <h3 id="simulatorResultsTitle">Simulador</h3>
                 <div class="results-grade" id="simulatorResultsSubtitle">Ranking de alumnos</div>
             </div>
             <div class="results-body">
                 <div id="simulatorResultsTableWrap"></div>
             </div>
-            <div class="results-footer">
-                <button class="action-btn" onclick="closeSimulatorResults()">
-                    <i class="fas fa-times"></i>
-                    <span>Cerrar</span>
-                </button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="simulatorModeChoiceModal">
+        <div class="study-modal simulator-mode-choice-modal">
+            <div class="modal-header">
+                <div class="simulator-mode-choice-title-wrap">
+                    <h3 id="simulatorModeChoiceTitle" class="simulator-mode-choice-title">Simulador</h3>
+                </div>
+                <button class="modal-close" type="button" onclick="closeSimulatorModeChoice()">&times;</button>
+            </div>
+            <div class="modal-body simulator-mode-choice-body">
+                <p>Elige cómo quieres abrir este simulador.</p>
+                <p class="simulator-mode-hint" id="simulatorModeRuleHint"></p>
+                <div class="simulator-mode-choice-actions">
+                    <button class="action-btn simulator-exam-mode-btn" id="startSimulatorExamModeBtn" type="button">
+                        <i class="fas fa-stopwatch"></i>
+                        <span>Modo examen</span>
+                    </button>
+                    <button class="action-btn" id="startSimulatorStudyModeBtn" type="button">
+                        <i class="fas fa-book-open"></i>
+                        <span>Modo estudio</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

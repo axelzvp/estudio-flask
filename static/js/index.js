@@ -25,6 +25,15 @@
         };
 
         let selectedSimulator = null;
+        let activeExamContext = 'general';
+        let simulatorStudyState = {
+            active: false,
+            simulatorName: '',
+            questions: [],
+            pool: [],
+            lastQuestionId: null,
+            currentIndex: 0
+        };
         
 
         let examState = {
@@ -145,7 +154,28 @@
             document.getElementById('getQuestionBtn').addEventListener('click', getRandomQuestion);
 
             // Simuladores
-            document.getElementById('startSimulatorBtn').addEventListener('click', startSimulatorExam);
+            const startSimulatorBtn = document.getElementById('startSimulatorBtn');
+            if (startSimulatorBtn) {
+                startSimulatorBtn.addEventListener('click', openSimulatorModeChoice);
+            }
+            const startSimulatorExamModeBtn = document.getElementById('startSimulatorExamModeBtn');
+            if (startSimulatorExamModeBtn) {
+                startSimulatorExamModeBtn.addEventListener('click', function() {
+                    closeSimulatorModeChoice();
+                    startSimulatorExam('exam');
+                });
+            }
+            const startSimulatorStudyModeBtn = document.getElementById('startSimulatorStudyModeBtn');
+            if (startSimulatorStudyModeBtn) {
+                startSimulatorStudyModeBtn.addEventListener('click', function() {
+                    closeSimulatorModeChoice();
+                    startSimulatorExam('study');
+                });
+            }
+            const cancelSimulatorModeBtn = document.getElementById('cancelSimulatorModeBtn');
+            if (cancelSimulatorModeBtn) {
+                cancelSimulatorModeBtn.addEventListener('click', closeSimulatorModeChoice);
+            }
             const viewSimulatorResultsBtn = document.getElementById('viewSimulatorResultsBtn');
             if (viewSimulatorResultsBtn) {
                 viewSimulatorResultsBtn.addEventListener('click', viewSimulatorResults);
@@ -171,11 +201,44 @@
             document.getElementById('simulatorSection').style.display = mode === 'simulator' ? 'block' : 'none';
             
             if (mode === 'study') {
+                resetSimulatorStudyState();
                 loadStudySubjects();
             } else if (mode === 'simulator') {
                 renderSimulators();
+            } else {
+                resetSimulatorStudyState();
             }
             updateSimulatorResultsButtonVisibility();
+        }
+
+        function resetSimulatorStudyState() {
+            simulatorStudyState.active = false;
+            simulatorStudyState.simulatorName = '';
+            simulatorStudyState.questions = [];
+            simulatorStudyState.pool = [];
+            simulatorStudyState.lastQuestionId = null;
+            simulatorStudyState.currentIndex = 0;
+        }
+
+        function configureExamHeaderLayout() {
+            const examModal = document.getElementById('examActiveModal');
+            const finishBtn = document.getElementById('finishExamBtn');
+            const examSimulatorName = document.getElementById('examSimulatorName');
+            const examHeaderSubject = document.getElementById('examHeaderSubject');
+            if (!examModal || !finishBtn) return;
+            const isSimulatorExam = activeExamContext === 'simulator';
+            examModal.classList.toggle('simulator-header-mode', isSimulatorExam);
+            finishBtn.innerHTML = isSimulatorExam
+                ? '<i class="fas fa-flag-checkered"></i> Entregar'
+                : '<i class="fas fa-flag-checkered"></i> Terminar Examen';
+            if (examSimulatorName) {
+                examSimulatorName.textContent = isSimulatorExam
+                    ? (selectedSimulator && selectedSimulator.name ? selectedSimulator.name : '')
+                    : '';
+            }
+            if (examHeaderSubject) {
+                examHeaderSubject.textContent = '';
+            }
         }
 
         function updateSimulatorResultsButtonVisibility() {
@@ -518,6 +581,7 @@
                     this.classList.add('active');
                     selectedSimulator = sim;
                     updateSimulatorResultsButtonVisibility();
+                    openSimulatorModeChoice();
                 });
                 list.appendChild(card);
 
@@ -535,9 +599,59 @@
             updateSimulatorResultsButtonVisibility();
         }
 
-        async function startSimulatorExam() {
+        function openSimulatorModeChoice() {
             if (!selectedSimulator) {
                 showNotification('Selecciona un simulador', 'warning');
+                return;
+            }
+
+            const modal = document.getElementById('simulatorModeChoiceModal');
+            const title = document.getElementById('simulatorModeChoiceTitle');
+            const examBtn = document.getElementById('startSimulatorExamModeBtn');
+            const studyBtn = document.getElementById('startSimulatorStudyModeBtn');
+            const hint = document.getElementById('simulatorModeRuleHint');
+            if (!modal || !title) {
+                startSimulatorExam('exam');
+                return;
+            }
+            title.textContent = selectedSimulator.name;
+            const canExam = isSimulatorExamModeEnabled(selectedSimulator);
+            const canStudy = isSimulatorStudyModeEnabled(selectedSimulator);
+            if (examBtn) {
+                examBtn.disabled = !canExam;
+                examBtn.title = canExam
+                    ? ''
+                    : 'Este simulador esta cerrado. Solo el maestro puede reactivarlo manualmente';
+            }
+            if (studyBtn) {
+                studyBtn.disabled = !canStudy;
+                studyBtn.title = canStudy
+                    ? ''
+                    : 'Se habilita después del cierre cuando el maestro lo activa manualmente';
+            }
+            if (hint) {
+                hint.textContent = '';
+                hint.style.display = 'none';
+            }
+            modal.classList.add('active');
+        }
+
+        function closeSimulatorModeChoice() {
+            const modal = document.getElementById('simulatorModeChoiceModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        async function startSimulatorExam(mode = 'exam') {
+            if (!selectedSimulator) {
+                showNotification('Selecciona un simulador', 'warning');
+                return;
+            }
+            if (mode === 'exam' && !isSimulatorExamModeEnabled(selectedSimulator)) {
+                showNotification('Este simulador esta cerrado. Espera activacion del maestro.', 'warning');
+                return;
+            }
+            if (mode === 'study' && !isSimulatorStudyModeEnabled(selectedSimulator)) {
+                showNotification('Modo estudio no disponible para este simulador aún', 'warning');
                 return;
             }
             
@@ -549,10 +663,42 @@
                     showNotification(data.error || 'No hay preguntas en este simulador', 'error');
                     return;
                 }
+
+                if (mode === 'study') {
+                    simulatorStudyState.active = true;
+                    simulatorStudyState.simulatorName = selectedSimulator.name || '';
+                    simulatorStudyState.questions = data.questions.slice();
+                    simulatorStudyState.pool = [];
+                    simulatorStudyState.lastQuestionId = null;
+                    simulatorStudyState.currentIndex = 0;
+                    getRandomQuestion();
+                    return;
+                }
                 
+                resetSimulatorStudyState();
+                activeExamContext = 'simulator';
+                configureExamHeaderLayout();
                 examState.questions = data.questions;
                 examConfig.questionCount = data.questions.length;
-                examConfig.timeLimit = data.time_limit || selectedSimulator.time_limit || 0;
+                const configuredMinutes = parseInt(data.time_limit || selectedSimulator.time_limit || 0, 10) || 0;
+                const forceEnabled = Boolean(data.force_enabled ?? selectedSimulator.force_enabled);
+                const enabledUntilRaw = data.enabled_until || selectedSimulator.enabled_until || null;
+
+                // Regla de aplicación:
+                // - En ventana programada (sin force): el examen termina al llegar la hora de cierre.
+                // - Rehabilitado manualmente (force): usa el cronometro configurado por minutos.
+                let timeLimitSeconds = 0;
+                if (!forceEnabled && enabledUntilRaw) {
+                    const untilTs = new Date(enabledUntilRaw).getTime();
+                    if (!Number.isNaN(untilTs)) {
+                        const remaining = Math.floor((untilTs - Date.now()) / 1000);
+                        timeLimitSeconds = Math.max(0, remaining);
+                    }
+                } else if (configuredMinutes > 0) {
+                    timeLimitSeconds = configuredMinutes * 60;
+                }
+
+                examConfig.timeLimit = timeLimitSeconds > 0 ? Math.max(1, Math.ceil(timeLimitSeconds / 60)) : 0;
                 
                 // Inicializar estado del examen
                 examState.active = true;
@@ -562,8 +708,8 @@
                 examState.submitted = false;
                 
                 // Configurar temporizador fijo
-                if (examConfig.timeLimit > 0) {
-                    examState.timeLeft = examConfig.timeLimit * 60;
+                if (timeLimitSeconds > 0) {
+                    examState.timeLeft = timeLimitSeconds;
                     startExamTimer();
                 }
                 
@@ -575,6 +721,20 @@
                 showNotification('Error cargando el simulador', 'error');
             }
         }
+
+        function isSimulatorStudyModeEnabled(sim) {
+            if (!sim) return false;
+            if (!sim.force_enabled) return false;
+            if (!sim.enabled_until) return false;
+            const untilTs = new Date(sim.enabled_until).getTime();
+            if (Number.isNaN(untilTs)) return false;
+            return Date.now() > untilTs;
+        }
+
+        function isSimulatorExamModeEnabled(sim) {
+            if (!sim) return false;
+            return Boolean(sim.is_open);
+        }
         
 
         async function getRandomQuestion() {
@@ -584,6 +744,19 @@
     getBtn.disabled = true;
     
     try {
+        if (simulatorStudyState.active) {
+            const questions = simulatorStudyState.questions || [];
+            if (questions.length === 0) {
+                showNotification('No hay preguntas en este simulador', 'warning');
+                return;
+            }
+            const index = simulatorStudyState.currentIndex % questions.length;
+            const nextQuestion = questions[index];
+            simulatorStudyState.currentIndex = (simulatorStudyState.currentIndex + 1) % questions.length;
+            displayStudyQuestion(nextQuestion);
+            return;
+        }
+
         const candidates = allQuestions.filter(q => {
             if (q.subject && q.subject.toLowerCase() === 'simulador') return false;
             if (studySelectedSubject !== 'todos' && q.subject !== studySelectedSubject) return false;
@@ -596,18 +769,30 @@
             return;
         }
         
-        if (studyQuestionPool.length === 0) {
-            studyQuestionPool = candidates.slice();
-            for (let i = studyQuestionPool.length - 1; i > 0; i--) {
+        const activePool = simulatorStudyState.active ? simulatorStudyState.pool : studyQuestionPool;
+        if (activePool.length === 0) {
+            const refill = candidates.slice();
+            for (let i = refill.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [studyQuestionPool[i], studyQuestionPool[j]] = [studyQuestionPool[j], studyQuestionPool[i]];
+                [refill[i], refill[j]] = [refill[j], refill[i]];
+            }
+            if (simulatorStudyState.active) {
+                simulatorStudyState.pool = refill;
+            } else {
+                studyQuestionPool = refill;
             }
         }
         
-        let nextQuestion = studyQuestionPool.pop();
-        if (nextQuestion && nextQuestion._id === lastStudyQuestionId && studyQuestionPool.length > 0) {
-            studyQuestionPool.unshift(nextQuestion);
-            nextQuestion = studyQuestionPool.pop();
+        let nextQuestion = (simulatorStudyState.active ? simulatorStudyState.pool : studyQuestionPool).pop();
+        const lastId = simulatorStudyState.active ? simulatorStudyState.lastQuestionId : lastStudyQuestionId;
+        if (nextQuestion && nextQuestion._id === lastId && (simulatorStudyState.active ? simulatorStudyState.pool : studyQuestionPool).length > 0) {
+            if (simulatorStudyState.active) {
+                simulatorStudyState.pool.unshift(nextQuestion);
+                nextQuestion = simulatorStudyState.pool.pop();
+            } else {
+                studyQuestionPool.unshift(nextQuestion);
+                nextQuestion = studyQuestionPool.pop();
+            }
         }
         
         if (!nextQuestion) {
@@ -615,7 +800,11 @@
             return;
         }
         
-        lastStudyQuestionId = nextQuestion._id;
+        if (simulatorStudyState.active) {
+            simulatorStudyState.lastQuestionId = nextQuestion._id;
+        } else {
+            lastStudyQuestionId = nextQuestion._id;
+        }
         displayStudyQuestion(nextQuestion);
     } catch (error) {
         console.error('Error obteniendo pregunta:', error);
@@ -817,10 +1006,16 @@ async function checkImageExists(url) {
 function displayStudyQuestion(question) {
 
     // Actualizar badges
+    const subjectLabel = simulatorStudyState.active
+        ? (question.simulator_subject || question.subject || 'Simulador')
+        : (question.subject || 'General');
+    const topicLabel = simulatorStudyState.active
+        ? (simulatorStudyState.simulatorName || 'Simulador')
+        : (question.topic || 'General');
 
-    document.getElementById('subjectText').textContent = question.subject;
+    document.getElementById('subjectText').textContent = subjectLabel;
 
-    document.getElementById('topicText').textContent = question.topic;
+    document.getElementById('topicText').textContent = topicLabel;
 
     document.getElementById('universityText').textContent = question.university || 'General';
 
@@ -1138,7 +1333,7 @@ function checkAnswer(selectedIndex, questionId) {
         
 
         function closeStudyModal() {
-
+            resetSimulatorStudyState();
             document.getElementById('studyQuestionModal').classList.remove('active');
 
         }
@@ -1213,6 +1408,8 @@ function checkAnswer(selectedIndex, questionId) {
 
         async function startExam() {
             updateExamConfig();
+            activeExamContext = 'general';
+            configureExamHeaderLayout();
 
             // Filtrar preguntas segÃºn configuraciÃ³n
 
@@ -1451,6 +1648,12 @@ function showExamQuestion(index) {
     examState.currentQuestionIndex = index;
 
     const question = examState.questions[index];
+    const headerSubjectEl = document.getElementById('examHeaderSubject');
+    if (headerSubjectEl) {
+        headerSubjectEl.textContent = activeExamContext === 'simulator'
+            ? (question.simulator_subject || question.subject || 'General')
+            : (question.subject || 'General');
+    }
 
     
 
@@ -1476,6 +1679,12 @@ function showExamQuestion(index) {
 
     const cleanedText = cleanQuestionText(question.question);
     let questionHTML = `<span class="exam-question-text">${cleanedText}</span>`;
+    const badgesHTML = activeExamContext === 'simulator'
+        ? `<span class="badge badge-subject">${question.simulator_subject || question.subject || 'General'}</span>`
+        : `
+                <span class="badge badge-subject">${question.subject}</span>
+                <span class="badge badge-topic">${question.topic}</span>
+          `;
 
     
 
@@ -1507,10 +1716,6 @@ function showExamQuestion(index) {
 
                 </div>
 
-                <div class="image-caption">
-                    <i class="fas fa-expand-alt"></i> Haz clic para ampliar
-                </div>
-
             </div>
 
         `;
@@ -1527,13 +1732,8 @@ function showExamQuestion(index) {
 
         <div class="exam-question-header">
 
-            <div class="question-number">Pregunta #${index + 1}</div>
-
             <div class="question-badges">
-
-                <span class="badge badge-subject">${question.subject}</span>
-
-                <span class="badge badge-topic">${question.topic}</span>
+                ${badgesHTML}
 
             </div>
 
@@ -1820,6 +2020,8 @@ function showExamQuestion(index) {
             document.getElementById('examActiveModal').classList.remove('active');
 
             examState.active = false;
+            activeExamContext = 'general';
+            configureExamHeaderLayout();
 
         }
 
@@ -2104,7 +2306,7 @@ function showExamQuestion(index) {
             const wrap = document.getElementById('simulatorResultsTableWrap');
             if (!title || !subtitle || !wrap) return;
 
-            title.textContent = `Resultados: ${data.simulator || 'Simulador'}`;
+            title.textContent = data.simulator || 'Simulador';
             const rows = Array.isArray(data.results) ? data.results : [];
             const sections = Array.isArray(data.sections) ? data.sections : [];
             subtitle.textContent = '';
@@ -2187,6 +2389,7 @@ function showExamQuestion(index) {
 
                     if (modal.id === 'examResultsModal') closeResults();
                     if (modal.id === 'simulatorResultsModal') closeSimulatorResults();
+                    if (modal.id === 'simulatorModeChoiceModal') closeSimulatorModeChoice();
 
                 }
 
@@ -2206,6 +2409,7 @@ function showExamQuestion(index) {
 
                 closeResults();
                 closeSimulatorResults();
+                closeSimulatorModeChoice();
 
                 
 

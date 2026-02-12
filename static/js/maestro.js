@@ -55,6 +55,39 @@ let existingImageUrl = null;
                 return false;
             }
         }
+
+        function activateMaestroPage(pageKey) {
+            if (!pageKey) return;
+
+            document.querySelectorAll('.menu-item[data-page]').forEach(i => i.classList.remove('active'));
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+            const menuItem = document.querySelector(`.menu-item[data-page="${pageKey}"]`);
+            if (menuItem) {
+                menuItem.classList.add('active');
+            }
+
+            const page = document.getElementById(`${pageKey}Page`);
+            if (page) {
+                page.classList.add('active');
+            }
+
+            document.querySelectorAll('.mobile-focus-btn[data-page]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.page === pageKey);
+            });
+
+            if (pageKey === 'questions') {
+                loadQuestionsPage();
+            } else if (pageKey === 'stats') {
+                loadStatsPage();
+            } else if (pageKey === 'simulators') {
+                loadSimulatorsPage();
+            } else if (pageKey === 'results') {
+                loadResultsPage();
+            } else if (pageKey === 'students') {
+                loadStudentsPage();
+            }
+        }
         
         function setupUserInterface() {
             // Actualizar información del usuario
@@ -68,30 +101,20 @@ let existingImageUrl = null;
                         openModal();
                         return;
                     }
-                    
-                    // Remover active de todos
-                    document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
-                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-                    
-                    // Activar el seleccionado
-                    this.classList.add('active');
-                    const pageId = this.dataset.page + 'Page';
-                    document.getElementById(pageId).classList.add('active');
-                    
-                    // Cargar datos específicos de cada página
-                    if (this.dataset.page === 'questions') {
-                        loadQuestionsPage();
-                    } else if (this.dataset.page === 'stats') {
-                        loadStatsPage();
-                    } else if (this.dataset.page === 'simulators') {
-                        loadSimulatorsPage();
-                    } else if (this.dataset.page === 'results') {
-                        loadResultsPage();
-                    } else if (this.dataset.page === 'students') {
-                        loadStudentsPage();
-                    }
+
+                    activateMaestroPage(this.dataset.page);
                 });
             });
+
+            document.querySelectorAll('.mobile-focus-btn[data-page]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    activateMaestroPage(this.dataset.page);
+                });
+            });
+
+            if (window.matchMedia('(max-width: 768px)').matches) {
+                activateMaestroPage('simulators');
+            }
             
             // Botón de logout
             document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -1549,7 +1572,7 @@ function createQuestionCard(question) {
             if (!entry) return;
 
             const simulatorName = escapeHtml(entry.simulator || 'Simulador');
-            title.innerHTML = `<i class="fas fa-table"></i> Resultados: ${simulatorName}`;
+            title.innerHTML = `<i class="fas fa-table"></i> ${simulatorName}`;
 
             if (entry.error) {
                 badge.textContent = 'Error';

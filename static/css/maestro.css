@@ -264,6 +264,32 @@ body {
   min-height: 100vh;
 }
 
+.mobile-focus-nav {
+  display: none;
+}
+
+.mobile-focus-btn {
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.mobile-focus-btn.active {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  border-color: var(--primary);
+  color: #fff;
+}
+
 .page {
   display: none;
   animation: fadeIn 0.4s ease;
@@ -1773,6 +1799,17 @@ textarea.form-control {
     margin-left: 0;
     padding: 16px;
   }
+  .mobile-focus-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    background: var(--bg-dark);
+    padding: 4px 0 8px;
+  }
   .subjects-grid {
     gap: 8px;
   }
@@ -1808,6 +1845,24 @@ textarea.form-control {
   .option-content img,
   .option-text img {
     max-height: 120px;
+  }
+  #questionsPage,
+  #statsPage,
+  #studyPage,
+  #studentsPage,
+  #resultsPage {
+    display: none !important;
+  }
+  .floating-new-question {
+    display: none;
+  }
+  #studentsPage .page-header,
+  #resultsPage .page-header {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+  .simulator-create {
+    display: none;
   }
 }
 
@@ -2341,9 +2396,38 @@ textarea.form-control {
 }
 
 @media (max-width: 768px) {
+    .simulator-attendance-table-wrap {
+        overflow-x: hidden;
+    }
+
+    .simulator-attendance-table {
+        min-width: 0;
+        table-layout: fixed;
+    }
+
+    .simulator-attendance-table th,
+    .simulator-attendance-table td {
+        font-size: 0.58rem;
+        padding: 6px 3px;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        line-height: 1.2;
+    }
+
+    .attendance-status {
+        font-size: 0.62rem;
+        padding: 2px 6px;
+    }
+
     .results-admin-list {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
+    }
+
+    .results-admin-card-btn {
+        background: #ffffff;
+        border-color: #dbe2ea;
     }
 
     .results-admin-summary {
@@ -2352,5 +2436,127 @@ textarea.form-control {
 
     .results-admin-summary h3 {
         font-size: 0.86rem;
+        color: #1e293b;
+    }
+
+    .results-admin-meta {
+        color: #64748b;
+    }
+
+    .results-admin-table-wrap {
+        overflow-x: hidden;
+    }
+
+    .results-admin-table {
+        min-width: 0;
+        table-layout: fixed;
+    }
+
+    .results-admin-table th,
+    .results-admin-table td {
+        font-size: 0.6rem;
+        padding: 6px 3px;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        line-height: 1.2;
+    }
+
+    #resultsAdminModal {
+        align-items: flex-start;
+        justify-content: center;
+        padding: 0.6rem;
+    }
+
+    #resultsAdminModal .modal {
+        width: 100%;
+        max-width: 100%;
+        max-height: calc(100vh - 1.2rem);
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        overflow: hidden;
+    }
+
+    #resultsAdminModal .modal-header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 12px 14px;
+        align-items: flex-start;
+    }
+
+    #resultsAdminModal .modal-title {
+        color: #1e293b;
+        font-size: 0.92rem;
+        line-height: 1.25;
+        padding-right: 34px;
+    }
+
+    #resultsAdminModal .modal-title i {
+        color: #475569;
+    }
+
+    #resultsAdminModal .modal-close {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+        color: #64748b;
+    }
+
+    #resultsAdminModal .modal-body {
+        padding: 10px;
+        overflow-y: auto;
+    }
+
+    #resultsAdminModal .modal-footer {
+        display: none;
+    }
+
+    #resultsAdminModal .results-admin-badge {
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 0.72rem;
+        padding: 3px 8px;
+    }
+
+    #resultsAdminModal .results-admin-table-wrap {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: #ffffff;
+        max-height: 68vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    #resultsAdminModal .results-admin-table {
+        min-width: 0;
+        table-layout: fixed;
+    }
+
+    #resultsAdminModal .results-admin-table th,
+    #resultsAdminModal .results-admin-table td {
+        font-size: 0.6rem;
+        padding: 6px 3px;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        line-height: 1.2;
+        color: #1e293b;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    #resultsAdminModal .results-admin-table th {
+        background: #f8fafc;
+        color: #1e293b;
+        font-weight: 700;
+    }
+
+    #resultsAdminModal .results-admin-table tbody tr:nth-child(odd) {
+        background: #fcfdff;
     }
 }
