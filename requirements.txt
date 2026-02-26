@@ -13,7 +13,12 @@ itsdangerous==2.2.0
 Jinja2==3.1.6
 MarkupSafe==3.0.3
 pillow==11.3.0
+pdf2image
+pdfplumber
+pdf-highlight-extractor
 pix2text
+PyMuPDF
+pytesseract
 PyJWT==2.10.1
 pymongo==4.6.2
 python-dotenv==1.0.0

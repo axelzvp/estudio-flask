@@ -11,6 +11,7 @@ import hashlib
 import os
 import tempfile
 from dotenv import load_dotenv
+from pdf_question_parser import parse_questions_from_file, PDFQuestionParserError, ParseConfig
 
 load_dotenv()
 MONGO_URI = os.environ.get("MONGO_URI")
@@ -824,6 +825,118 @@ def bulk_questions():
             'error': f'Error procesando carga masiva: {str(e)}'
         }), 500
 
+
+@app.route('/api/bulk_questions_file', methods=['POST'])
+@maestro_required
+def bulk_questions_file():
+    """Procesa carga masiva de preguntas desde PDF, imagen o texto."""
+    try:
+        uploaded_file = request.files.get('file')
+        if not uploaded_file or uploaded_file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'Debes seleccionar un archivo PDF, imagen o texto'
+            }), 400
+
+        subject = request.form.get('subject', 'Matemáticas')
+        topic = request.form.get('topic', 'General')
+        university = request.form.get('university', 'UNAM')
+        simulator_section = normalize_simulator_section(request.form.get('simulator_subject', ''))
+
+        if not topic or topic.strip() == '':
+            return jsonify({
+                'success': False,
+                'error': 'El tema es requerido'
+            }), 400
+
+        if subject == SIMULATOR_SUBJECT:
+            ensure_simulator(topic)
+            if not simulator_section:
+                return jsonify({
+                    'success': False,
+                    'error': 'La materia interna del simulador es requerida'
+                }), 400
+
+        # Por defecto NO forzamos número en rojo para no bloquear imágenes comunes.
+        require_red_start = parse_bool(request.form.get('require_red_start'), False)
+        parsed_items = parse_questions_from_file(
+            uploaded_file,
+            config=ParseConfig(require_red_question_number=require_red_start)
+        )
+        if not parsed_items:
+            return jsonify({
+                'success': False,
+                'error': 'No se detectaron preguntas completas en el archivo',
+                'suggestions': [
+                    'Verifica que cada pregunta inicie con numeración (1., 2), 3-, 4:)',
+                    'Asegura al menos dos opciones por pregunta (A), B), ...)',
+                    'Si el PDF es escaneado, prueba con una imagen más nítida'
+                ]
+            }), 400
+
+        preguntas_insertadas = []
+        for item in parsed_items:
+            pregunta = (item.get('pregunta') or '').strip()
+            opciones_raw = item.get('opciones') or []
+            opciones = []
+            for op in opciones_raw:
+                op_txt = str(op or '').strip()
+                op_txt = re.sub(r'^\s*[A-Da-d4][\)\.\:]\s*', '', op_txt).strip()
+                if op_txt:
+                    opciones.append(op_txt)
+
+            if not pregunta or len(opciones) < 2:
+                continue
+
+            detected_correct = item.get('correct_option', None)
+            if isinstance(detected_correct, int) and 0 <= detected_correct < len(opciones):
+                opcion_correcta = detected_correct
+            else:
+                opcion_correcta = 0
+            pregunta_doc = {
+                'subject': subject,
+                'topic': topic,
+                'simulator_subject': simulator_section if subject == SIMULATOR_SUBJECT else '',
+                'question': pregunta,
+                'has_options': True,
+                'options': opciones,
+                'correct_option': opcion_correcta,
+                'correct_answer': f"A. {opciones[opcion_correcta]}",
+                'answer': opciones[opcion_correcta],
+                'solution': '',
+                'university': university,
+                'created_at': datetime.now(UTC),
+                'times_shown': 0,
+                'times_correct': 0,
+                'source': 'pdf_import'
+            }
+            preguntas_insertadas.append(pregunta_doc)
+
+        if not preguntas_insertadas:
+            return jsonify({
+                'success': False,
+                'error': 'No se detectaron preguntas válidas para insertar'
+            }), 400
+
+        result = questions_collection.insert_many(preguntas_insertadas)
+        return jsonify({
+            'success': True,
+            'message': f'Se insertaron {len(preguntas_insertadas)} preguntas desde archivo',
+            'inserted_count': len(preguntas_insertadas),
+            'inserted_ids': [str(i) for i in result.inserted_ids],
+            'subject': subject,
+            'topic': topic,
+            'university': university
+        })
+
+    except PDFQuestionParserError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Error procesando archivo: {str(e)}'
+        }), 500
+
 @app.route('/api/questions/<question_id>', methods=['PUT'])
 @maestro_required
 def update_question(question_id):
@@ -1553,6 +1666,7 @@ def api_info():
             'GET /api/simulators/<name>/results': 'Obtener ranking y resultados por simulador',
             'GET /api/simulators/<name>/attendance': 'Obtener control de aplicacion por alumno',
             'POST /api/register': 'Registrar alumno o maestro (solo maestro)',
+            'POST /api/bulk_questions_file': 'Procesar PDF/imagen y cargar preguntas',
             'POST /api/login': 'Iniciar sesión',
             'POST /api/logout': 'Cerrar sesión',
             'GET /api/current-user': 'Obtener usuario actual'

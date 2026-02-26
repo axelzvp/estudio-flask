@@ -559,6 +559,14 @@
                     </div>
                 </div>
 
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label><i class="fas fa-file-pdf"></i> Importar desde archivo (PDF, imagen o texto)</label>
+                    <input type="file" class="form-control" id="bulkFile" accept=".pdf,image/*,.txt,.md,.csv">
+                    <div class="form-hint">
+                        <i class="fas fa-info-circle"></i> Si eliges archivo, se usará OCR automático cuando sea necesario.
+                    </div>
+                </div>
+
                 <!-- Área de texto principal -->
                 <div class="form-group">
                     <label><i class="fas fa-paste"></i> Pega las preguntas aquí</label>
@@ -665,6 +673,7 @@ Respuesta: B"
                         <option value="Historia">Historia</option>
                         <option value="Geografía">Geografía</option>
                         <option value="Simulador">Simulador</option>
+                        <option value="_new_">✏️ Otra materia...</option>
                     </select>
                     <input type="text" class="form-control" id="modalNewSubject" 
                            placeholder="Otra materia" style="flex: 1; display: none;">

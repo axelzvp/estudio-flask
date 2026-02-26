@@ -1,4 +1,4 @@
-Ôªø
+
         let currentUser = null;
         let userRole = null;
         let allQuestions = [];
@@ -23,8 +23,9 @@
         let currentImageFile = null;
         let adminResultsCache = [];
 let existingImageUrl = null;
+        const DEFAULT_MODAL_SUBJECTS = ['Simulador'];
         
-        // Verificar autenticaci√≥n y rol
+        // Verificar autenticaciÛn y rol
         document.addEventListener('DOMContentLoaded', async function() {
             await checkAuthentication();
             
@@ -90,11 +91,11 @@ let existingImageUrl = null;
         }
         
         function setupUserInterface() {
-            // Actualizar informaci√≥n del usuario
+            // Actualizar informaciÛn del usuario
             document.getElementById('userGreeting').textContent = `Panel de Maestro`;
             document.getElementById('userName').textContent = `${currentUser.nombre} ${currentUser.apellido}`;
             
-            // Configurar eventos del men√∫
+            // Configurar eventos del men˙
             document.querySelectorAll('.menu-item[data-page]').forEach(item => {
                 item.addEventListener('click', function() {
                     if (this.id === 'openModalBtn') {
@@ -116,11 +117,11 @@ let existingImageUrl = null;
                 activateMaestroPage('simulators');
             }
             
-            // Bot√≥n de logout
+            // BotÛn de logout
             document.getElementById('logoutBtn').addEventListener('click', logout);
             
             // Botones flotantes y de modal
-            // Y c√°mbialas para usar window.openModal (la funci√≥n de app.js):
+            // Y c·mbialas para usar window.openModal (la funciÛn de app.js):
             const openModalBtn = document.getElementById('openModalBtn');
             if (openModalBtn) {
                 openModalBtn.addEventListener('click', function() {
@@ -157,7 +158,7 @@ let existingImageUrl = null;
                     window.openModal();
                 });
             }
-            // Bot√≥n de ayuda
+            // BotÛn de ayuda
             document.getElementById('showHelpBtn').addEventListener('click', function() {
                 document.getElementById('helpModal').classList.add('active');
             });
@@ -173,14 +174,14 @@ let existingImageUrl = null;
         function initMaestroApp() {
             // Modal de preguntas - Eventos de cierre
             document.getElementById('closeModalBtn').addEventListener('click', function() {
-                window.closeModal(); // Usar la funci√≥n de app.js
+                window.closeModal(); // Usar la funciÛn de app.js
             });
             document.getElementById('cancelModalBtn').addEventListener('click', function() {
-                window.closeModal(); // Usar la funci√≥n de app.js
+                window.closeModal(); // Usar la funciÛn de app.js
             });
             document.getElementById('saveQuestionBtn').addEventListener('click', saveQuestion);
             
-            // Teclados matem√°ticos - Inicializar
+            // Teclados matem·ticos - Inicializar
             initMathToolbars();
             initPix2TextUploader();
             
@@ -194,14 +195,14 @@ let existingImageUrl = null;
             document.getElementById('typeFilter').addEventListener('change', applyFilters);
             document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
             
-            // B√∫squeda
+            // B˙squeda
             document.getElementById('searchBtn').addEventListener('click', performSearch);
             document.getElementById('searchInput').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') performSearch();
             });
             document.getElementById('clearSearchBtn').addEventListener('click', clearSearch);
             
-            // Paginaci√≥n
+            // PaginaciÛn
             document.getElementById('prevPageBtn').addEventListener('click', prevPage);
             document.getElementById('nextPageBtn').addEventListener('click', nextPage);
             
@@ -237,6 +238,15 @@ let existingImageUrl = null;
                 });
             }
 
+            if (modalNewSubjectInput) {
+                modalNewSubjectInput.addEventListener('input', function() {
+                    const typed = (this.value || '').trim();
+                    if ((document.getElementById('modalSubject')?.value || '') === '_new_') {
+                        loadModalTopics(typed);
+                    }
+                });
+            }
+
             // Simulador en modal
             const simulatorCheckbox = document.getElementById('modalIsSimulator');
             const simulatorNameInput = document.getElementById('modalSimulatorName');
@@ -244,13 +254,13 @@ let existingImageUrl = null;
                 simulatorCheckbox.addEventListener('change', toggleSimulatorMode);
             }
             
-            // Checkbox para opciones m√∫ltiples
+            // Checkbox para opciones m˙ltiples
             const hasOptionsCheckbox = document.getElementById('hasOptionsCheckbox');
             if (hasOptionsCheckbox) {
                 hasOptionsCheckbox.addEventListener('change', toggleOptions);
             }
             
-            // Configurar bot√≥n de eliminar en modal de confirmaci√≥n
+            // Configurar botÛn de eliminar en modal de confirmaciÛn
             document.getElementById('confirmDeleteBtn').addEventListener('click', deleteQuestion);
             const closeStudentModalBtn = document.getElementById('closeStudentModalBtn');
             const cancelStudentModalBtn = document.getElementById('cancelStudentModalBtn');
@@ -506,7 +516,7 @@ let existingImageUrl = null;
             const input = document.getElementById('groupDeleteConfirmInput');
             if (!group || !input) return;
             if ((input.value || '').trim() !== group) {
-                showNotification('Confirmaci√≥n cancelada: nombre de grupo no coincide', 'warning');
+                showNotification('ConfirmaciÛn cancelada: nombre de grupo no coincide', 'warning');
                 return;
             }
             try {
@@ -525,7 +535,7 @@ let existingImageUrl = null;
                 }
             } catch (error) {
                 console.error('Error eliminando grupo:', error);
-                showNotification('Error de conexi√≥n', 'error');
+                showNotification('Error de conexiÛn', 'error');
             }
         }
 
@@ -616,7 +626,7 @@ let existingImageUrl = null;
                 }
             } catch (error) {
                 console.error('Error registrando usuario:', error);
-                showNotification('Error de conexi√≥n', 'error');
+                showNotification('Error de conexiÛn', 'error');
             } finally {
                 if (btn) {
                     btn.disabled = false;
@@ -654,7 +664,7 @@ let existingImageUrl = null;
         });
         
         function initMathToolbars() {
-            // Inicializar todos los teclados matem√°ticos
+            // Inicializar todos los teclados matem·ticos
             ['questionMathToolbar', 'answerMathToolbar', 'solutionMathToolbar'].forEach(toolbarId => {
                 const toolbar = document.getElementById(toolbarId);
                 if (toolbar) {
@@ -673,9 +683,9 @@ let existingImageUrl = null;
                 }
             });
             
-            // Para las opciones m√∫ltiples
+            // Para las opciones m˙ltiples
             document.querySelectorAll('.option-input').forEach(textarea => {
-                // Los botones matem√°ticos para opciones se manejan mediante el evento focus
+                // Los botones matem·ticos para opciones se manejan mediante el evento focus
             });
         }
         
@@ -684,10 +694,10 @@ let existingImageUrl = null;
             const end = textarea.selectionEnd;
             const text = textarea.value;
             
-            // Insertar el s√≠mbolo en la posici√≥n del cursor
+            // Insertar el sÌmbolo en la posiciÛn del cursor
             textarea.value = text.substring(0, start) + symbol + text.substring(end);
             
-            // Reposicionar el cursor despu√©s del s√≠mbolo insertado
+            // Reposicionar el cursor despuÈs del sÌmbolo insertado
             const newPosition = start + symbol.length;
             textarea.selectionStart = newPosition;
             textarea.selectionEnd = newPosition;
@@ -709,7 +719,7 @@ let existingImageUrl = null;
 
             convertBtn.addEventListener('click', async function() {
                 if (!fileInput.files || !fileInput.files[0]) {
-                    showNotification('Selecciona una imagen de la f√≥rmula', 'warning');
+                    showNotification('Selecciona una imagen de la fÛrmula', 'warning');
                     return;
                 }
 
@@ -737,8 +747,8 @@ let existingImageUrl = null;
 
                     const latexRaw = (data.latex || '').trim();
                     if (!latexRaw) {
-                        setPix2TextStatus('No se detect√≥ LaTeX en la imagen.');
-                        showNotification('No se detect√≥ LaTeX en la imagen', 'warning');
+                        setPix2TextStatus('No se detectÛ LaTeX en la imagen.');
+                        showNotification('No se detectÛ LaTeX en la imagen', 'warning');
                         return;
                     }
 
@@ -753,8 +763,8 @@ let existingImageUrl = null;
                     fileInput.value = '';
                 } catch (error) {
                     console.error('Pix2Text error:', error);
-                    setPix2TextStatus('Error de conexi√≥n con el servidor.');
-                    showNotification('Error de conexi√≥n', 'error');
+                    setPix2TextStatus('Error de conexiÛn con el servidor.');
+                    showNotification('Error de conexiÛn', 'error');
                 } finally {
                     convertBtn.disabled = false;
                 }
@@ -765,7 +775,7 @@ let existingImageUrl = null;
             const textarea = event.target;
             const optionId = textarea.id;
             
-            // Determinar qu√© toolbar matem√°tico usar
+            // Determinar quÈ toolbar matem·tico usar
             const toolbar = document.getElementById('answerMathToolbar');
             
             // Actualizar todos los botones para que apunten a esta textarea
@@ -810,7 +820,7 @@ let existingImageUrl = null;
                 topicInput.disabled = true;
                 if (newSubjectInput) newSubjectInput.style.display = 'none';
                 if (simulatorSectionSelect && !simulatorSectionSelect.value) {
-                    simulatorSectionSelect.value = 'Matem√°ticas';
+                    simulatorSectionSelect.value = 'Matem·ticas';
                 }
                 loadModalTopics('');
             } else {
@@ -820,7 +830,7 @@ let existingImageUrl = null;
                 subjectSelect.disabled = false;
                 topicInput.disabled = false;
                 if (subjectSelect.value === 'Simulador') {
-                    subjectSelect.value = 'Matem√É¬°ticas';
+                    subjectSelect.value = 'Matem√°ticas';
                 }
                 if (simulatorSectionSelect) {
                     simulatorSectionSelect.value = '';
@@ -849,7 +859,7 @@ let existingImageUrl = null;
                 topicInput.disabled = true;
                 if (newSubjectInput) newSubjectInput.style.display = 'none';
                 if (simulatorSectionSelect && !simulatorSectionSelect.value) {
-                    simulatorSectionSelect.value = 'Matem√°ticas';
+                    simulatorSectionSelect.value = 'Matem·ticas';
                 }
                 loadBulkTopics('');
             } else {
@@ -859,7 +869,7 @@ let existingImageUrl = null;
                 subjectSelect.disabled = false;
                 topicInput.disabled = false;
                 if (subjectSelect.value === 'Simulador') {
-                    subjectSelect.value = 'Matem√É¬°ticas';
+                    subjectSelect.value = 'Matem√°ticas';
                 }
                 if (simulatorSectionSelect) {
                     simulatorSectionSelect.value = '';
@@ -946,7 +956,7 @@ let existingImageUrl = null;
             if (sidebarSubjects) sidebarSubjects.textContent = subjects;
             if (sidebarShown) sidebarShown.textContent = shown;
             
-            // Actualizar resumen estad√≠stico si existe en el DOM
+            // Actualizar resumen estadÌstico si existe en el DOM
             const totalQuestionsStat = document.getElementById('totalQuestionsStat');
             const totalSubjectsStat = document.getElementById('totalSubjectsStat');
             const totalShownStat = document.getElementById('totalShownStat');
@@ -969,20 +979,54 @@ let existingImageUrl = null;
                 option.textContent = subject;
                 subjectSelect.appendChild(option);
             });
+            refreshModalSubjectOptions();
         }
-        
+
+        function refreshModalSubjectOptions(selectedValue = '') {
+            const modalSubject = document.getElementById('modalSubject');
+            if (!modalSubject) return;
+
+            const dynamicSubjects = [...new Set(allQuestions.map(q => (q.subject || '').trim()).filter(Boolean))];
+            const merged = [...new Set([...DEFAULT_MODAL_SUBJECTS, ...dynamicSubjects])]
+                .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
+            const preferred = dynamicSubjects.find(s => s !== 'Simulador') || dynamicSubjects[0] || 'Simulador';
+            const wanted = selectedValue || modalSubject.value || preferred;
+            modalSubject.innerHTML = '';
+
+            merged.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject;
+                option.textContent = subject;
+                modalSubject.appendChild(option);
+            });
+
+            const other = document.createElement('option');
+            other.value = '_new_';
+            other.textContent = 'Otra materia...';
+            modalSubject.appendChild(other);
+
+            if (wanted === '_new_') {
+                modalSubject.value = '_new_';
+            } else if (merged.includes(wanted)) {
+                modalSubject.value = wanted;
+            } else {
+                modalSubject.value = merged.includes(preferred) ? preferred : (merged[0] || '_new_');
+            }
+        }
+
         async function updateTopicFilter() {
             const subject = document.getElementById('subjectFilter').value;
             const topicFilter = document.getElementById('topicFilter');
             
-            // Guardar selecci√≥n actual
+            // Guardar selecciÛn actual
             const currentTopic = topicFilter.value;
             
             // Limpiar opciones excepto la primera
             topicFilter.innerHTML = '<option value="todos">Todos los temas</option>';
             
             if (subject !== 'todos') {
-                // Obtener temas √∫nicos de la materia seleccionada
+                // Obtener temas ˙nicos de la materia seleccionada
                 const topics = [...new Set(
                     allQuestions
                         .filter(q => q.subject === subject)
@@ -996,7 +1040,7 @@ let existingImageUrl = null;
                     topicFilter.appendChild(option);
                 });
                 
-                // Restaurar selecci√≥n si a√∫n existe
+                // Restaurar selecciÛn si a˙n existe
                 if (topics.includes(currentTopic)) {
                     topicFilter.value = currentTopic;
                 }
@@ -1075,7 +1119,7 @@ let existingImageUrl = null;
                     }
                 }
                 
-                // Filtrar por b√∫squeda
+                // Filtrar por b˙squeda
                 if (currentSearch) {
                     const searchText = currentSearch.toLowerCase();
                     const questionText = question.question.toLowerCase();
@@ -1095,7 +1139,7 @@ let existingImageUrl = null;
             // Actualizar contadores
             updateSidebarStats();
             
-            // Mostrar/ocultar estados vac√≠os
+            // Mostrar/ocultar estados vacÌos
             const container = document.getElementById('questionsList');
             const noQuestionsMsg = document.getElementById('noQuestionsMessage');
             const noSearchResults = document.getElementById('noSearchResults');
@@ -1123,7 +1167,7 @@ let existingImageUrl = null;
             noQuestionsMsg.style.display = 'none';
             noSearchResults.style.display = 'none';
             
-            // Calcular paginaci√≥n
+            // Calcular paginaciÛn
             const totalPages = Math.ceil(filteredQuestions.length / itemsPerPage);
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = startIndex + itemsPerPage;
@@ -1142,13 +1186,13 @@ let existingImageUrl = null;
                     .catch(err => console.log('MathJax error:', err));
             }
             
-            // Actualizar paginaci√≥n
+            // Actualizar paginaciÛn
             if (totalPages > 1) {
                 pagination.style.display = 'flex';
                 document.getElementById('prevPageBtn').disabled = currentPage === 1;
                 document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
                 document.getElementById('pageInfo').textContent = 
-                    `P√°gina ${currentPage} de ${totalPages} (${filteredQuestions.length} preguntas)`;
+                    `P·gina ${currentPage} de ${totalPages} (${filteredQuestions.length} preguntas)`;
             } else {
                 pagination.style.display = 'none';
             }
@@ -1199,7 +1243,7 @@ function createQuestionCard(question) {
         
         <div class="question-content ${isLong ? '' : 'expanded'}">
             ${questionText}
-            ${isLong ? '<span class="read-more" onclick="toggleQuestionText(this)">[leer m√°s]</span>' : ''}
+            ${isLong ? '<span class="read-more" onclick="toggleQuestionText(this)">[leer m·s]</span>' : ''}
         </div>
         
         ${imageHTML}
@@ -1227,7 +1271,7 @@ function createQuestionCard(question) {
 }
 
 
-// Agregar esta funci√≥n en la secci√≥n de funciones auxiliares
+// Agregar esta funciÛn en la secciÛn de funciones auxiliares
 
         
         function toggleQuestionText(element) {
@@ -1236,7 +1280,7 @@ function createQuestionCard(question) {
             
             if (isExpanded) {
                 content.classList.remove('expanded');
-                element.textContent = '[leer m√°s]';
+                element.textContent = '[leer m·s]';
             } else {
                 content.classList.add('expanded');
                 element.textContent = '[leer menos]';
@@ -1311,11 +1355,11 @@ function createQuestionCard(question) {
                 if (data.success) {
                     const stats = data.stats;
                     
-                    // Distribuci√≥n por materias
+                    // DistribuciÛn por materias
                     const subjectsChart = document.getElementById('subjectsChart');
                     subjectsChart.innerHTML = createBarChart(stats.subjects, 'subject');
                     
-                    // Distribuci√≥n por universidad
+                    // DistribuciÛn por universidad
                     const universitiesChart = document.getElementById('universitiesChart');
                     universitiesChart.innerHTML = createBarChart(stats.universities, 'university');
                     
@@ -1327,13 +1371,13 @@ function createQuestionCard(question) {
                     const performanceStats = document.getElementById('performanceStats');
                     performanceStats.innerHTML = createPerformanceStats(stats);
                     
-                    // Preguntas m√°s vistas
+                    // Preguntas m·s vistas
                     const mostViewed = document.getElementById('mostViewedQuestions');
                     mostViewed.innerHTML = createMostViewedList(allQuestions);
                 }
             } catch (error) {
-                console.error('Error cargando estad√≠sticas:', error);
-                showNotification('Error al cargar estad√≠sticas', 'error');
+                console.error('Error cargando estadÌsticas:', error);
+                showNotification('Error al cargar estadÌsticas', 'error');
             }
         }
         
@@ -1399,7 +1443,7 @@ function createQuestionCard(question) {
                         ${accuracy}%
                     </div>
                     <div style="color: var(--text-muted); font-size: 0.9rem;">
-                        Precisi√≥n global
+                        PrecisiÛn global
                     </div>
                     <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div>
@@ -1475,7 +1519,7 @@ function createQuestionCard(question) {
                 }
             } catch (error) {
                 console.error('Error cargando simuladores:', error);
-                showNotification('Error de conexi√É¬≥n', 'error');
+                showNotification('Error de conexi√≥n', 'error');
             }
         }
 
@@ -1674,7 +1718,7 @@ function createQuestionCard(question) {
                 renderStudents();
             } catch (error) {
                 console.error('Error cargando alumnos:', error);
-                showNotification('Error de conexi√≥n al cargar alumnos', 'error');
+                showNotification('Error de conexiÛn al cargar alumnos', 'error');
             }
         }
 
@@ -1779,7 +1823,7 @@ function createQuestionCard(question) {
                 }
             } catch (error) {
                 console.error('Error editando grupo:', error);
-                showNotification('Error de conexi√≥n', 'error');
+                showNotification('Error de conexiÛn', 'error');
             }
         }
 
@@ -1912,9 +1956,9 @@ function createQuestionCard(question) {
         }
 
         function formatDateTimeLocal(value) {
-            if (!value) return 'Sin l√≠mite';
+            if (!value) return 'Sin lÌmite';
             const date = new Date(value);
-            if (Number.isNaN(date.getTime())) return 'Sin l√≠mite';
+            if (Number.isNaN(date.getTime())) return 'Sin lÌmite';
             const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
             const day = date.getDate();
             const month = months[date.getMonth()];
@@ -2027,7 +2071,7 @@ function createQuestionCard(question) {
                 }
             } catch (error) {
                 console.error('Error guardando simulador:', error);
-                showNotification('Error de conexi√É¬≥n', 'error');
+                showNotification('Error de conexi√≥n', 'error');
             }
         }
 
@@ -2070,14 +2114,14 @@ function createQuestionCard(question) {
                     });
                     const data = await response.json();
                     if (data.success) {
-                        showNotification(nextForceEnabled ? 'Simulador habilitado manualmente' : 'Simulador volvi√≥ a usar fechas', 'success');
+                        showNotification(nextForceEnabled ? 'Simulador habilitado manualmente' : 'Simulador volviÛ a usar fechas', 'success');
                         await loadSimulatorsPage();
                     } else {
                         showNotification(data.error || 'Error al actualizar estado', 'error');
                     }
                 } catch (error) {
                     console.error('Error cambiando estado forzado:', error);
-                    showNotification('Error de conexi√≥n', 'error');
+                    showNotification('Error de conexiÛn', 'error');
                 }
                 return;
             }
@@ -2085,7 +2129,7 @@ function createQuestionCard(question) {
             if (deleteBtn) {
                 const actionsMenu = card.querySelector('.simulator-actions-menu');
                 if (actionsMenu) actionsMenu.classList.remove('open');
-                if (!confirm(`¬øEliminar simulador "${name}"? Esto borrar√° sus preguntas.`)) return;
+                if (!confirm(`øEliminar simulador "${name}"? Esto borrar· sus preguntas.`)) return;
                 try {
                     const response = await fetch(`/api/simulators/${encodeURIComponent(name)}`, {
                         method: 'DELETE'
@@ -2099,7 +2143,7 @@ function createQuestionCard(question) {
                     }
                 } catch (error) {
                     console.error('Error eliminando simulador:', error);
-                    showNotification('Error de conexi√≥n', 'error');
+                    showNotification('Error de conexiÛn', 'error');
                 }
                 return;
             }
@@ -2185,7 +2229,7 @@ function createQuestionCard(question) {
                 }).join('');
             } catch (error) {
                 console.error('Error cargando asistencia de simulador:', error);
-                body.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--danger);">Error de conexi√≥n</td></tr>';
+                body.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--danger);">Error de conexiÛn</td></tr>';
             }
         }
 
@@ -2230,7 +2274,7 @@ function createQuestionCard(question) {
                 }
             } catch (error) {
                 console.error('Error actualizando simulador:', error);
-                showNotification('Error de conexi√≥n', 'error');
+                showNotification('Error de conexiÛn', 'error');
             }
         }
         
@@ -2377,7 +2421,7 @@ function createQuestionCard(question) {
                 }
             } catch (error) {
                 console.error('Error obteniendo pregunta:', error);
-                showNotification('Error de conexi√≥n', 'error');
+                showNotification('Error de conexiÛn', 'error');
             } finally {
                 getBtn.innerHTML = originalText;
                 getBtn.disabled = false;
@@ -2403,7 +2447,7 @@ function displayStudyQuestion(question) {
     // Crear contenido de pregunta
     let questionHTML = question.question;
     
-    // A√±adir imagen si existe (USANDO EL MISMO FORMATO QUE index.js)
+    // AÒadir imagen si existe (USANDO EL MISMO FORMATO QUE index.js)
     if (question.image && question.image.trim() !== '') {
         const imageUrl = `/static/img/${question.image}`;
         questionHTML += `
@@ -2440,10 +2484,10 @@ function displayStudyQuestion(question) {
         optionsContainer.innerHTML = '<p style="color: var(--gray); font-style: italic; text-align: center;">Esta es una pregunta de respuesta abierta</p>';
     }
     
-    // Actualizar respuesta y soluci√≥n
+    // Actualizar respuesta y soluciÛn
     answerTextEl.innerHTML = question.answer || question.correct_answer || '';
     
-    // Mostrar soluci√≥n si existe
+    // Mostrar soluciÛn si existe
     const solutionContainer = document.getElementById('solutionContainer');
     if (question.solution && question.solution.trim() !== '') {
         solutionTextEl.innerHTML = question.solution;
@@ -2460,7 +2504,7 @@ function displayStudyQuestion(question) {
     // Mostrar modal
     document.getElementById('studyQuestionModal').style.display = 'flex';
     
-    // Actualizar MathJax despu√©s de un breve retraso
+    // Actualizar MathJax despuÈs de un breve retraso
     if (window.MathJax) {
         setTimeout(() => {
             MathJax.typesetPromise()
@@ -2501,10 +2545,10 @@ function displayStudyQuestion(question) {
             if (selectedCard) {
                 if (isCorrect) {
                     selectedCard.classList.add('correct');
-                    showNotification('‚úÖ ¬°Respuesta correcta!', 'success');
+                    showNotification('? °Respuesta correcta!', 'success');
                 } else {
                     selectedCard.classList.add('incorrect');
-                    showNotification('‚ùå Respuesta incorrecta', 'error');
+                    showNotification('? Respuesta incorrecta', 'error');
                 }
             }
             
@@ -2518,7 +2562,7 @@ function displayStudyQuestion(question) {
             if (question.solution && question.solution.trim() !== '') {
                 document.getElementById('modalSolutionText').innerHTML = 
                     `<div class="solution-box">
-                        <h4><i class="fas fa-list-ol"></i> Soluci√≥n Detallada</h4>
+                        <h4><i class="fas fa-list-ol"></i> SoluciÛn Detallada</h4>
                         <div>${question.solution}</div>
                     </div>`;
             }
@@ -2560,12 +2604,12 @@ function displayStudyQuestion(question) {
             document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Nueva Pregunta';
             document.getElementById('saveQuestionBtn').innerHTML = '<i class="fas fa-save"></i> Guardar Pregunta';
             
-            document.getElementById('modalSubject').value = 'Matem√°ticas';
+            refreshModalSubjectOptions('Matem·ticas');
             document.getElementById('modalNewSubject').style.display = 'none';
             document.getElementById('modalNewSubject').value = '';
             document.getElementById('modalTopic').value = '';
             document.getElementById('modalTopic').disabled = false;
-            loadModalTopics('Matem√°ticas');
+            loadModalTopics('Matem·ticas');
             document.getElementById('modalQuestion').value = '';
             document.getElementById('modalAnswer').value = '';
             document.getElementById('modalSolution').value = '';
@@ -2585,7 +2629,7 @@ function displayStudyQuestion(question) {
             document.getElementById('previewImage').src = '';
             const pix2TextInput = document.getElementById('pix2textImage');
             if (pix2TextInput) pix2TextInput.value = '';
-            setPix2TextStatus('Sube una imagen con la f√≥rmula y se insertar√° en la pregunta como $$...$$');
+            setPix2TextStatus('Sube una imagen con la fÛrmula y se insertar· en la pregunta como $$...$$');
             
             if (document.getElementById('hasOptionsCheckbox')) {
                 document.getElementById('hasOptionsCheckbox').checked = false;
@@ -2616,7 +2660,7 @@ function displayStudyQuestion(question) {
             document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Editar Pregunta';
             document.getElementById('saveQuestionBtn').innerHTML = '<i class="fas fa-save"></i> Actualizar Pregunta';
             
-            document.getElementById('modalSubject').value = question.subject;
+            refreshModalSubjectOptions(question.subject);
             document.getElementById('modalTopic').value = question.topic;
             loadModalTopics(question.subject);
             document.getElementById('modalQuestion').value = question.question;
@@ -2653,7 +2697,7 @@ function displayStudyQuestion(question) {
             document.getElementById('questionModal').classList.add('active');
         }
 
-        // Modificar la funci√≥n saveQuestion para manejar im√°genes
+        // Modificar la funciÛn saveQuestion para manejar im·genes
 async function saveQuestion() {
     // Obtener valores
     const subject = document.getElementById('modalSubject').value;
@@ -2706,7 +2750,7 @@ async function saveQuestion() {
         formData.append('image', currentImageFile);
     }
     
-    // Agregar opciones m√∫ltiples o respuesta abierta
+    // Agregar opciones m˙ltiples o respuesta abierta
     if (document.getElementById('hasOptionsCheckbox').checked) {
         const options = [
             document.getElementById('optionA').value.trim(),
@@ -2723,7 +2767,7 @@ async function saveQuestion() {
         
         const correctOptionInput = document.querySelector('input[name="correctOption"]:checked');
         if (!correctOptionInput) {
-            showNotification('Debes seleccionar la opci√≥n correcta', 'error');
+            showNotification('Debes seleccionar la opciÛn correcta', 'error');
             return;
         }
         
@@ -2758,7 +2802,7 @@ async function saveQuestion() {
         
         if (isEditMode && currentEditQuestionId) {
             // Para actualizar, necesitamos enviar como JSON normal
-            // Ya que PUT con FormData es m√°s complejo
+            // Ya que PUT con FormData es m·s complejo
             // Enviar sin imagen por ahora (se puede mejorar)
             const questionData = {
                 subject: finalSubject,
@@ -2768,7 +2812,7 @@ async function saveQuestion() {
                 university: finalUniversity,
                 solution: document.getElementById('modalSolution').value.trim(),
                 has_options: document.getElementById('hasOptionsCheckbox').checked,
-                // Mantener imagen existente si no se subi√≥ nueva
+                // Mantener imagen existente si no se subiÛ nueva
                 image: currentImageFile ? undefined : existingImageUrl
             };
             
@@ -2811,17 +2855,17 @@ async function saveQuestion() {
         
         if (data.success) {
             showNotification(
-                isEditMode ? '‚úÖ Pregunta actualizada' : '‚úÖ Pregunta guardada', 
+                isEditMode ? '? Pregunta actualizada' : '? Pregunta guardada', 
                 'success'
             );
             closeModal();
             await loadAllData();
         } else {
-            showNotification('‚ùå Error: ' + (data.error || 'Error desconocido'), 'error');
+            showNotification('? Error: ' + (data.error || 'Error desconocido'), 'error');
         }
     } catch (error) {
         console.error('Error guardando pregunta:', error);
-        showNotification('‚ùå Error de conexi√≥n', 'error');
+        showNotification('? Error de conexiÛn', 'error');
     } finally {
         saveBtn.innerHTML = originalText;
         saveBtn.disabled = false;
@@ -2857,15 +2901,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 
                 if (data.success) {
-                    showNotification('‚úÖ Pregunta eliminada', 'success');
+                    showNotification('? Pregunta eliminada', 'success');
                     closeConfirmModal();
                     await loadAllData(); // Recargar datos
                 } else {
-                    showNotification('‚ùå Error: ' + data.error, 'error');
+                    showNotification('? Error: ' + data.error, 'error');
                 }
             } catch (error) {
                 console.error('Error eliminando pregunta:', error);
-                showNotification('‚ùå Error de conexi√≥n', 'error');
+                showNotification('? Error de conexiÛn', 'error');
             }
         }
         
@@ -2899,16 +2943,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         
         
-         // Funciones para carga masiva (VERSI√ìN MEJORADA)
+         // Funciones para carga masiva (VERSI”N MEJORADA)
     function openBulkModal() {
         document.getElementById('bulkModal').style.display = 'flex';
         document.getElementById('bulkText').value = '';
+        const bulkFileInput = document.getElementById('bulkFile');
+        if (bulkFileInput) bulkFileInput.value = '';
         document.getElementById('bulkProgressContainer').style.display = 'none';
         document.getElementById('bulkResultContainer').style.display = 'none';
         document.getElementById('bulkPreview').style.display = 'none';
         
         // Resetear valores
-        document.getElementById('bulkSubject').value = 'Matem√°ticas';
+        document.getElementById('bulkSubject').value = 'Matem·ticas';
         document.getElementById('bulkNewSubject').style.display = 'none';
         document.getElementById('bulkNewSubject').value = '';
         document.getElementById('bulkTopic').value = '';
@@ -2938,7 +2984,7 @@ document.addEventListener('DOMContentLoaded', function() {
             bulkSimulatorCheckbox.addEventListener('change', toggleBulkSimulatorMode);
         }
         
-        // Evento para an√°lisis en tiempo real
+        // Evento para an·lisis en tiempo real
         document.getElementById('bulkText').addEventListener('input', function() {
             actualizarEstadisticasBulk();
         });
@@ -2956,15 +3002,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const previewElement = document.getElementById('bulkPreview');
         
         if (!texto) {
-            statsElement.textContent = '0 preguntas detectadas | 0 l√≠neas';
+            statsElement.textContent = '0 preguntas detectadas | 0 lÌneas';
             previewElement.style.display = 'none';
             return;
         }
         
-        // Contar l√≠neas
+        // Contar lÌneas
         const lineas = texto.split('\n').length;
         
-        // Mejor detecci√≥n de preguntas: buscar patr√≥n de opciones m√∫ltiples
+        // Mejor detecciÛn de preguntas: buscar patrÛn de opciones m˙ltiples
         const lineasArray = texto.split('\n');
         let preguntasDetectadas = 0;
         let encontroOpciones = false;
@@ -2973,13 +3019,13 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 0; i < lineasArray.length; i++) {
             const linea = lineasArray[i].trim();
             
-            // Detectar l√≠neas con opciones A), B), C), D)
+            // Detectar lÌneas con opciones A), B), C), D)
             if (/^[A-D][).]\s+/.test(linea) || /^\([A-D]\)\s+/.test(linea)) {
                 opcionesContador++;
                 encontroOpciones = true;
             }
             
-            // Si hay una l√≠nea de respuesta, contar como pregunta completada
+            // Si hay una lÌnea de respuesta, contar como pregunta completada
             if (encontroOpciones && /^[Rr]espuesta:\s*[A-D]/i.test(linea)) {
                 if (opcionesContador >= 4) { // Al menos 4 opciones detectadas
                     preguntasDetectadas++;
@@ -2989,7 +3035,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Tambi√©n contar por bloques separados por l√≠neas vac√≠as
+        // TambiÈn contar por bloques separados por lÌneas vacÌas
         const bloques = texto.trim().split(/\n\s*\n/);
         let preguntasPorBloques = 0;
         
@@ -3003,13 +3049,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Usar el m√°ximo entre ambos m√©todos
+        // Usar el m·ximo entre ambos mÈtodos
         const finalPreguntas = Math.max(preguntasDetectadas, preguntasPorBloques);
         
-        // Mostrar estad√≠sticas
-        statsElement.textContent = `${finalPreguntas} preguntas detectadas | ${lineas} l√≠neas`;
+        // Mostrar estadÌsticas
+        statsElement.textContent = `${finalPreguntas} preguntas detectadas | ${lineas} lÌneas`;
         
-        // Mostrar vista previa de la primera pregunta v√°lida
+        // Mostrar vista previa de la primera pregunta v·lida
         if (finalPreguntas > 0) {
             for (const bloque of bloques) {
                 if (bloque.trim() && /[Rr]espuesta:\s*[A-D]/i.test(bloque)) {
@@ -3025,9 +3071,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function procesarCargaMasiva() {
         const texto = document.getElementById('bulkText').value.trim();
+        const fileInput = document.getElementById('bulkFile');
+        const selectedFile = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
         
-        if (!texto) {
-            showNotification('Por favor pega las preguntas primero', 'warning');
+        if (!texto && !selectedFile) {
+            showNotification('Pega texto o selecciona un archivo PDF/imagen/texto', 'warning');
             return;
         }
         
@@ -3076,28 +3124,43 @@ document.addEventListener('DOMContentLoaded', function() {
         processBtn.disabled = true;
         
         try {
-            updateProgress(10, 'Analizando texto...');
-            
-            const response = await fetch('/api/bulk_questions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ 
-                    texto: texto,
-                    subject: finalSubject,
-                    topic: topic,
-                    university: university,
-                    simulator_subject: isSimulator ? simulatorSection : ''
-                })
-            });
-            
-            updateProgress(50, 'Enviando datos al servidor...');
+            const endpoint = selectedFile ? '/api/bulk_questions_file' : '/api/bulk_questions';
+            updateProgress(10, selectedFile ? 'Analizando archivo...' : 'Analizando texto...');
+
+            let response;
+            if (selectedFile) {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('subject', finalSubject);
+                formData.append('topic', topic);
+                formData.append('university', university);
+                formData.append('simulator_subject', isSimulator ? simulatorSection : '');
+                response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+            } else {
+                response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        texto: texto,
+                        subject: finalSubject,
+                        topic: topic,
+                        university: university,
+                        simulator_subject: isSimulator ? simulatorSection : ''
+                    })
+                });
+            }
+
+            updateProgress(50, selectedFile ? 'Procesando contenido...' : 'Enviando datos al servidor...');
             
             const data = await response.json();
             
             if (data.success) {
-                updateProgress(100, '¬°Completado!');
+                updateProgress(100, '°Completado!');
                 
                 // Mostrar resultados
                 const resultContainer = document.getElementById('bulkResultContainer');
@@ -3107,7 +3170,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 resultContainer.innerHTML = `
                     <div style="text-align: center;">
                         <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        <h4>¬°Carga completada exitosamente!</h4>
+                        <h4>°Carga completada exitosamente!</h4>
                         
                         <div style="margin: 15px 0; text-align: left; background: rgba(255,255,255,0.5); padding: 10px; border-radius: 5px;">
                             <div><strong>Materia:</strong> ${finalSubject}</div>
@@ -3117,7 +3180,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         
                         <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">
-                            <i class="fas fa-sync-alt"></i> Las preguntas se a√±adieron a la base de datos
+                            <i class="fas fa-sync-alt"></i> Las preguntas se aÒadieron a la base de datos
                         </p>
                         
                         <div style="margin-top: 15px;">
@@ -3125,18 +3188,18 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <i class="fas fa-eye"></i> Ver preguntas
                             </button>
                             <button class="btn btn-primary btn-sm" onclick="cargarMasPreguntas()" style="margin-left: 10px;">
-                                <i class="fas fa-plus"></i> Cargar m√°s
+                                <i class="fas fa-plus"></i> Cargar m·s
                             </button>
                         </div>
                     </div>
                 `;
                 
-                // Limpiar solo el texto, mantener materia y tema por si quieren a√±adir m√°s
+                // Limpiar solo el texto, mantener materia y tema por si quieren aÒadir m·s
                 document.getElementById('bulkText').value = '';
                 
-                showNotification(`‚úÖ Se insertaron ${data.inserted_count} preguntas en ${finalSubject} - ${topic}`, 'success');
+                showNotification(`? Se insertaron ${data.inserted_count} preguntas en ${finalSubject} - ${topic}`, 'success');
                 
-                // Recargar datos despu√©s de 2 segundos
+                // Recargar datos despuÈs de 2 segundos
                 setTimeout(() => {
                     loadAllData();
                 }, 2000);
@@ -3171,7 +3234,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
                 
-                showNotification(`‚ùå ${data.error}`, 'error');
+                showNotification(`? ${data.error}`, 'error');
             }
             
         } catch (error) {
@@ -3183,15 +3246,15 @@ document.addEventListener('DOMContentLoaded', function() {
             resultContainer.innerHTML = `
                 <div style="text-align: center;">
                     <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                    <h4>Error de conexi√≥n</h4>
+                    <h4>Error de conexiÛn</h4>
                     <p>No se pudo conectar con el servidor: ${error.message}</p>
                     <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">
-                        Verifica tu conexi√≥n a internet e intenta de nuevo.
+                        Verifica tu conexiÛn a internet e intenta de nuevo.
                     </p>
                 </div>
             `;
             
-            showNotification('‚ùå Error de conexi√≥n con el servidor', 'error');
+            showNotification('? Error de conexiÛn con el servidor', 'error');
             
         } finally {
             processBtn.innerHTML = originalText;
@@ -3200,10 +3263,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function verPreguntasInsertadas(cantidad) {
-        // Cierra el modal y va a la p√°gina de preguntas
+        // Cierra el modal y va a la p·gina de preguntas
         closeBulkModal();
         
-        // Activa la pesta√±a de preguntas
+        // Activa la pestaÒa de preguntas
         document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         
@@ -3211,24 +3274,24 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('questionsPage').classList.add('active');
         
         // Muestra un mensaje
-        showNotification(`Verifica las ${cantidad} preguntas reci√©n a√±adidas`, 'info');
+        showNotification(`Verifica las ${cantidad} preguntas reciÈn aÒadidas`, 'info');
     }
     
     function cargarMasPreguntas() {
-        // Limpia solo el √°rea de texto, mantiene los dem√°s valores
+        // Limpia solo el ·rea de texto, mantiene los dem·s valores
         document.getElementById('bulkText').value = '';
         document.getElementById('bulkResultContainer').style.display = 'none';
         document.getElementById('bulkProgressContainer').style.display = 'none';
         document.getElementById('bulkText').focus();
         
-        showNotification('Puedes pegar m√°s preguntas', 'info');
+        showNotification('Puedes pegar m·s preguntas', 'info');
     }
 
 
 
 
 
-    // Funci√≥n para actualizar la barra de progreso (agregar despu√©s de la funci√≥n openBulkModal)
+    // FunciÛn para actualizar la barra de progreso (agregar despuÈs de la funciÛn openBulkModal)
     function updateProgress(porcentaje, mensaje) {
         const progressBar = document.getElementById('bulkProgressBar');
         const progressText = document.getElementById('bulkProgressText');
@@ -3237,7 +3300,7 @@ document.addEventListener('DOMContentLoaded', function() {
             progressBar.style.width = porcentaje + '%';
             progressText.textContent = mensaje + ' ' + porcentaje + '%';
             
-            // Cambiar color seg√∫n el progreso
+            // Cambiar color seg˙n el progreso
             if (porcentaje < 30) {
                 progressBar.style.background = 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)';
             } else if (porcentaje < 70) {
@@ -3251,7 +3314,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function verPreguntasInsertadas(cantidad) {
         closeBulkModal();
         
-        // Activar la pesta√±a de preguntas
+        // Activar la pestaÒa de preguntas
         document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         
@@ -3261,7 +3324,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         document.getElementById('questionsPage').classList.add('active');
         
-        showNotification(`Verifica las ${cantidad} preguntas reci√©n a√±adidas`, 'info');
+        showNotification(`Verifica las ${cantidad} preguntas reciÈn aÒadidas`, 'info');
     }
 
 
@@ -3269,7 +3332,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('bulkModal').style.display = 'none';
 }
 
-    // AGREGAR ESTAS FUNCIONES AQU√ç:
+    // AGREGAR ESTAS FUNCIONES AQUÕ:
     function updateProgress(porcentaje, mensaje) {
         const progressBar = document.getElementById('bulkProgressBar');
         const progressText = document.getElementById('bulkProgressText');
@@ -3278,7 +3341,7 @@ document.addEventListener('DOMContentLoaded', function() {
             progressBar.style.width = porcentaje + '%';
             progressText.textContent = mensaje + ' ' + porcentaje + '%';
             
-            // Cambiar color seg√∫n el progreso
+            // Cambiar color seg˙n el progreso
             if (porcentaje < 30) {
                 progressBar.style.background = 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)';
             } else if (porcentaje < 70) {
@@ -3292,7 +3355,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function verPreguntasInsertadas(cantidad) {
         closeBulkModal();
         
-        // Activar la pesta√±a de preguntas
+        // Activar la pestaÒa de preguntas
         document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         
@@ -3302,7 +3365,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         document.getElementById('questionsPage').classList.add('active');
         
-        showNotification(`Verifica las ${cantidad} preguntas reci√©n a√±adidas`, 'info');
+        showNotification(`Verifica las ${cantidad} preguntas reciÈn aÒadidas`, 'info');
     }
     
     
@@ -3312,7 +3375,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formatos = {
                 formato1: /(.*?)\nA[\).]\s*(.*?)\nB[\).]\s*(.*?)\nC[\).]\s*(.*?)\nD[\).]\s*(.*?)\n.*?[Rr]espuesta:\s*([A-D])/gi,
                 formato2: /(\d+\.\s.*?)\n\(A\)\s*(.*?)\n\(B\)\s*(.*?)\n\(C\)\s*(.*?)\n\(D\)\s*(.*?)\n.*?[Cc]orrecta:\s*([A-D])/gi,
-                formato3: /(PREGUNTA\s*\d+[\.:]\s*.*?)\nA\.\s*(.*?)\nB\.\s*(.*?)\nC\.\s*(.*?)\nD\.\s*(.*?)\n.*?SOLUCI√ìN:\s*([A-D])/gi
+                formato3: /(PREGUNTA\s*\d+[\.:]\s*.*?)\nA\.\s*(.*?)\nB\.\s*(.*?)\nC\.\s*(.*?)\nD\.\s*(.*?)\n.*?SOLUCI”N:\s*([A-D])/gi
             };
             
             const resultados = {
@@ -3338,37 +3401,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
         function ejemploFormato() {
-            const ejemplo = `Calcula el √°rea del tri√°ngulo con base 10 y altura 5
-        A) 25 cm¬≤
-        B) 30 cm¬≤
-        C) 35 cm¬≤
-        D) 40 cm¬≤
+            const ejemplo = `Calcula el ·rea del tri·ngulo con base 10 y altura 5
+        A) 25 cm≤
+        B) 30 cm≤
+        C) 35 cm≤
+        D) 40 cm≤
         Respuesta: A
         
-        Resuelve la ecuaci√≥n: 2x + 5 = 15
+        Resuelve la ecuaciÛn: 2x + 5 = 15
         A) x = 5
         B) x = 6
         C) x = 7
         D) x = 8
         Respuesta: A
         
-        ¬øCu√°l es la capital de Francia?
+        øCu·l es la capital de Francia?
         A) Madrid
         B) Roma
-        C) Par√≠s
-        D) Berl√≠n
+        C) ParÌs
+        D) BerlÌn
         Respuesta: C`;
         
             document.getElementById('bulkText').value = ejemplo;
             actualizarEstadisticasBulk();
             document.getElementById('bulkText').focus();
             
-            showNotification('Ejemplo cargado. Puedes editarlo o a√±adir m√°s preguntas', 'info');
+            showNotification('Ejemplo cargado. Puedes editarlo o aÒadir m·s preguntas', 'info');
         }
 
 
 
-// Funci√≥n para mostrar vista previa de imagen
+// FunciÛn para mostrar vista previa de imagen
 function setupImagePreview() {
     const imageInput = document.getElementById('modalImage');
     const previewContainer = document.getElementById('imagePreviewContainer');
@@ -3395,7 +3458,7 @@ function setupImagePreview() {
     });
 }
 
-// Funci√≥n para quitar imagen
+// FunciÛn para quitar imagen
 function removeImage() {
     currentImageFile = null;
     existingImageUrl = null;
@@ -3405,7 +3468,7 @@ function removeImage() {
     document.getElementById('previewImage').src = '';
 }
 
-// Modificar la funci√≥n editQuestion para cargar imagen existente
+// Modificar la funciÛn editQuestion para cargar imagen existente
 function editQuestion(questionId) {
     const question = allQuestions.find(q => q._id === questionId);
     if (!question) {
@@ -3419,8 +3482,8 @@ function editQuestion(questionId) {
     document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Editar Pregunta';
     document.getElementById('saveQuestionBtn').innerHTML = '<i class="fas fa-save"></i> Actualizar Pregunta';
     
-    // Cargar datos b√°sicos
-    document.getElementById('modalSubject').value = question.subject;
+    // Cargar datos b·sicos
+    refreshModalSubjectOptions(question.subject);
     document.getElementById('modalTopic').value = question.topic;
     loadModalTopics(question.subject);
     document.getElementById('modalQuestion').value = question.question;
@@ -3469,12 +3532,12 @@ function editQuestion(questionId) {
 }
 
 
-// Funci√≥n para ver imagen ampliada
+// FunciÛn para ver imagen ampliada
 function expandImage(src) {
     expandQuestionImage(src);
 }
 
-// Funci√≥n para cerrar imagen ampliada
+// FunciÛn para cerrar imagen ampliada
 
 
 // Evitar que el clic en la imagen cierre el modal
@@ -3483,7 +3546,7 @@ document.getElementById('modalExpandedImage').addEventListener('click', function
 });
 
 
-// Agregar esta funci√≥n cerca de las otras funciones de utilidad
+// Agregar esta funciÛn cerca de las otras funciones de utilidad
 function expandQuestionImage(src) {
     const modal = document.createElement('div');
     modal.className = 'image-expand-modal';
@@ -3518,7 +3581,7 @@ function closeExpandedImage() {
     document.removeEventListener('keydown', handleEscKey);
 }
 
-// Funci√≥n para expandir imagen (IGUAL QUE EN index.js)
+// FunciÛn para expandir imagen (IGUAL QUE EN index.js)
 function expandQuestionImage(src) {
     const modal = document.createElement('div');
     modal.className = 'image-expand-modal';
@@ -3552,6 +3615,9 @@ function closeExpandedImage() {
     }
     document.removeEventListener('keydown', handleEscKey);
 }
+
+
+
 
 
 
