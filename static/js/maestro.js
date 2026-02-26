@@ -255,6 +255,7 @@ let existingImageUrl = null;
             const closeStudentModalBtn = document.getElementById('closeStudentModalBtn');
             const cancelStudentModalBtn = document.getElementById('cancelStudentModalBtn');
             const createStudentBtn = document.getElementById('createStudentBtn');
+            const createTeacherBtn = document.getElementById('createTeacherBtn');
             if (closeStudentModalBtn) {
                 closeStudentModalBtn.addEventListener('click', closeStudentModal);
             }
@@ -263,6 +264,9 @@ let existingImageUrl = null;
             }
             if (createStudentBtn) {
                 createStudentBtn.addEventListener('click', createStudent);
+            }
+            if (createTeacherBtn) {
+                createTeacherBtn.addEventListener('click', createTeacher);
             }
             const closeStudentCredentialsModalBtn = document.getElementById('closeStudentCredentialsModalBtn');
             const closeStudentCredentialsBtn = document.getElementById('closeStudentCredentialsBtn');
@@ -452,13 +456,22 @@ let existingImageUrl = null;
             resetStudentForm();
         }
 
-        function openStudentCredentialsModal(email, password) {
+        function openStudentCredentialsModal(email, password, role = 'alumno') {
             const modal = document.getElementById('studentCredentialsModal');
             const emailEl = document.getElementById('studentCredentialsEmail');
             const passwordEl = document.getElementById('studentCredentialsPassword');
+            const titleEl = document.getElementById('studentCredentialsTitle');
+            const hintEl = document.getElementById('studentCredentialsHint');
             if (!modal || !emailEl || !passwordEl) return;
+            const roleLabel = role === 'maestro' ? 'Maestro' : 'Alumno';
             emailEl.textContent = email || '-';
             passwordEl.textContent = password || '-';
+            if (titleEl) {
+                titleEl.innerHTML = `<i class="fas fa-id-card"></i> Datos del ${roleLabel}`;
+            }
+            if (hintEl) {
+                hintEl.textContent = `Comparte estos datos con el ${roleLabel.toLowerCase()}:`;
+            }
             modal.classList.add('active');
         }
 
@@ -554,19 +567,23 @@ let existingImageUrl = null;
             });
         }
 
-        async function createStudent() {
+        async function createUser(role, buttonId) {
             const nombre = (document.getElementById('studentNombre')?.value || '').trim();
             const apellido = (document.getElementById('studentApellido')?.value || '').trim();
             const email = (document.getElementById('studentEmail')?.value || '').trim();
             const password = (document.getElementById('studentPassword')?.value || '').trim();
             const grupo = (document.getElementById('studentGroup')?.value || '').trim();
 
-            if (!nombre || !apellido || !email || !password || !grupo) {
+            if (!nombre || !apellido || !email || !password) {
+                showNotification('Completa nombre, apellido, correo y contrasena', 'error');
+                return;
+            }
+            if (role === 'alumno' && !grupo) {
                 showNotification('Completa todos los campos del alumno', 'error');
                 return;
             }
 
-            const btn = document.getElementById('createStudentBtn');
+            const btn = document.getElementById(buttonId);
             const originalText = btn ? btn.innerHTML : '';
             if (btn) {
                 btn.disabled = true;
@@ -583,21 +600,22 @@ let existingImageUrl = null;
                         email,
                         password,
                         grupo,
-                        rol: 'alumno'
+                        rol: role
                     })
                 });
                 const data = await response.json();
 
                 if (data.success) {
-                    showNotification('Alumno registrado correctamente', 'success');
+                    const roleLabel = role === 'maestro' ? 'Maestro' : 'Alumno';
+                    showNotification(`${roleLabel} registrado correctamente`, 'success');
                     closeStudentModal();
-                    openStudentCredentialsModal(email, password);
+                    openStudentCredentialsModal(email, password, role);
                     loadStudentsPage();
                 } else {
-                    showNotification(data.error || 'Error al registrar alumno', 'error');
+                    showNotification(data.error || 'Error al registrar usuario', 'error');
                 }
             } catch (error) {
-                console.error('Error registrando alumno:', error);
+                console.error('Error registrando usuario:', error);
                 showNotification('Error de conexión', 'error');
             } finally {
                 if (btn) {
@@ -605,6 +623,14 @@ let existingImageUrl = null;
                     btn.innerHTML = originalText;
                 }
             }
+        }
+
+        async function createStudent() {
+            return createUser('alumno', 'createStudentBtn');
+        }
+
+        async function createTeacher() {
+            return createUser('maestro', 'createTeacherBtn');
         }
 
         document.addEventListener('keydown', function(e) {

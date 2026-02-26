@@ -2560,3 +2560,17 @@ textarea.form-control {
         background: #fcfdff;
     }
 }
+
+@media (min-width: 769px) {
+    .question-image {
+        max-height: 190px;
+    }
+
+    .question-content img,
+    .exam-question-content img,
+    .answer-content img,
+    .solution-content img,
+    .modal-body img {
+        max-height: 260px;
+    }
+}

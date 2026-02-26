@@ -271,23 +271,28 @@ def maestro_required(f):
 @app.route('/api/register', methods=['POST'])
 @maestro_required
 def register_user():
-    """Registra un nuevo alumno (solo maestro)"""
+    """Registra un nuevo alumno o maestro (solo maestro)"""
     try:
         data = request.get_json() or {}
+        role = (data.get('rol') or 'alumno').strip().lower()
+        if role not in ('alumno', 'maestro'):
+            return jsonify({
+                'success': False,
+                'error': 'Rol invalido. Solo se permite alumno o maestro'
+            }), 400
 
         # Validar campos requeridos
-        required_fields = ['nombre', 'apellido', 'email', 'password', 'grupo']
+        required_fields = ['nombre', 'apellido', 'email', 'password']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({
                     'success': False,
                     'error': f'El campo {field} es requerido'
                 }), 400
-
-        if data.get('rol') and data.get('rol') != 'alumno':
+        if role == 'alumno' and not data.get('grupo'):
             return jsonify({
                 'success': False,
-                'error': 'Solo se permite registrar usuarios con rol alumno'
+                'error': 'El campo grupo es requerido para alumnos'
             }), 400
 
         # Verificar si el email ya existe
@@ -304,24 +309,25 @@ def register_user():
             'apellido': data['apellido'],
             'email': data['email'],
             'password': hash_password(data['password']),
-            'grupo': data['grupo'],
-            'rol': 'alumno',
+            'grupo': (data.get('grupo') or '').strip(),
+            'rol': role,
             'created_at': datetime.now(UTC)
         }
 
         # Insertar en MongoDB
         result = users_collection.insert_one(user_doc)
+        created_role_label = 'Alumno' if role == 'alumno' else 'Maestro'
 
         return jsonify({
             'success': True,
-            'message': 'Alumno registrado exitosamente',
+            'message': f'{created_role_label} registrado exitosamente',
             'user': {
                 '_id': str(result.inserted_id),
                 'nombre': data['nombre'],
                 'apellido': data['apellido'],
                 'email': data['email'],
-                'grupo': data['grupo'],
-                'rol': 'alumno'
+                'grupo': (data.get('grupo') or '').strip(),
+                'rol': role
             }
         }), 201
 
@@ -1546,7 +1552,7 @@ def api_info():
             'POST /api/simulators/<name>/score': 'Guardar puntaje del usuario en simulador',
             'GET /api/simulators/<name>/results': 'Obtener ranking y resultados por simulador',
             'GET /api/simulators/<name>/attendance': 'Obtener control de aplicacion por alumno',
-            'POST /api/register': 'Registrar alumno (solo maestro)',
+            'POST /api/register': 'Registrar alumno o maestro (solo maestro)',
             'POST /api/login': 'Iniciar sesión',
             'POST /api/logout': 'Cerrar sesión',
             'GET /api/current-user': 'Obtener usuario actual'

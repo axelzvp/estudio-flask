@@ -63,10 +63,6 @@
                 <i class="fas fa-users"></i>
                 <span>Alumnos</span>
             </div>
-            <div class="menu-item" id="openStudentModalMenuBtn">
-                <i class="fas fa-user-plus"></i>
-                <span>Nuevo Alumno</span>
-            </div>
         </nav>
         
         <div class="stats-sidebar">
@@ -129,9 +125,9 @@
                     <button class="btn btn-ghost" id="showHelpBtn">
                         <i class="fas fa-question-circle"></i>
                     </button>
-                    <button class="btn btn-outline" id="openStudentModalBtn">
-                        <i class="fas fa-user-plus"></i>
-                        Nuevo Alumno
+                    <button class="btn btn-outline" id="openModalFromListBtn">
+                        <i class="fas fa-plus"></i>
+                        Nueva pregunta
                     </button>
                     <!-- En el page-header de la página de preguntas, añade esto junto a los otros botones -->
                     <button class="btn btn-success" onclick="openBulkModal()" style="margin-left: 10px;">
@@ -312,7 +308,7 @@
                         <i class="fas fa-sync"></i> Recargar
                     </button>
                     <button class="btn btn-primary" id="openStudentModalFromStudentsBtn">
-                        <i class="fas fa-user-plus"></i> Nuevo Alumno
+                        <i class="fas fa-user-plus"></i> Nuevo Usuario
                     </button>
                 </div>
             </div>
@@ -1093,6 +1089,9 @@ Respuesta: B"
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelStudentModalBtn">Cancelar</button>
+                <button class="btn btn-outline" id="createTeacherBtn">
+                    <i class="fas fa-chalkboard-teacher"></i> Registrar Maestro
+                </button>
                 <button class="btn btn-primary" id="createStudentBtn">
                     <i class="fas fa-save"></i> Registrar Alumno
                 </button>
@@ -1103,11 +1102,11 @@ Respuesta: B"
     <div class="modal-overlay" id="studentCredentialsModal">
         <div class="modal" style="max-width: 520px;">
             <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-id-card"></i> Datos del Alumno</h3>
+                <h3 class="modal-title" id="studentCredentialsTitle"><i class="fas fa-id-card"></i> Datos del Alumno</h3>
                 <button class="modal-close" id="closeStudentCredentialsModalBtn">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 12px; color: var(--text-secondary);">
+                <p id="studentCredentialsHint" style="margin-bottom: 12px; color: var(--text-secondary);">
                     Comparte estos datos con el alumno:
                 </p>
                 <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px;">
