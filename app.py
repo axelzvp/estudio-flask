@@ -859,9 +859,13 @@ def bulk_questions_file():
 
         # Por defecto NO forzamos número en rojo para no bloquear imágenes comunes.
         require_red_start = parse_bool(request.form.get('require_red_start'), False)
+        use_math_latex = parse_bool(request.form.get('use_math_latex'), True)
         parsed_items = parse_questions_from_file(
             uploaded_file,
-            config=ParseConfig(require_red_question_number=require_red_start)
+            config=ParseConfig(
+                require_red_question_number=require_red_start,
+                use_math_latex=use_math_latex,
+            )
         )
         if not parsed_items:
             return jsonify({

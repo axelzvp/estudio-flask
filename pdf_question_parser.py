@@ -40,6 +40,9 @@ IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
 TEXT_EXTENSIONS = {".txt", ".md", ".csv"}
 RED_START = "[[RED]]"
 RED_END = "[[/RED]]"
+MATH_SYMBOL_RE = re.compile(r"[=+\-*/^_<>]|\\frac|\\sqrt|\\sum|\\int|\\pi|\\alpha|\\beta")
+MATH_DENSE_RE = re.compile(r"(?:\d+\s*[-+*/=]\s*\d+)|(?:[a-zA-Z]\s*[-+*/=]\s*[a-zA-Z0-9])")
+_PIX2TEXT_INSTANCE = None
 
 
 class PDFQuestionParserError(Exception):
@@ -60,6 +63,8 @@ class ParseConfig:
     collapse_blank_lines: bool = True
     # Si True, solo acepta preguntas cuyo numero inicial se detecta en rojo.
     require_red_question_number: bool = False
+    # Si True, intenta enriquecer OCR con formula en LaTeX usando Pix2Text.
+    use_math_latex: bool = False
 
 
 def parse_questions_from_file(
@@ -126,6 +131,7 @@ def extract_text_from_pdf(pdf_path: str, config: ParseConfig) -> str:
                     page_number=idx + 1,
                     lang=config.ocr_lang,
                     dpi=config.ocr_dpi,
+                    config=config,
                 )
                 page_texts.append(ocr_text.strip())
     except Exception as exc:
@@ -138,7 +144,7 @@ def extract_text_from_image(image_path: str, config: ParseConfig) -> str:
     """Extrae texto con OCR desde una imagen."""
     try:
         with Image.open(image_path) as image:
-            text = _ocr_image_with_color_markers(image, lang=config.ocr_lang)
+            text = _ocr_image_with_color_markers(image, lang=config.ocr_lang, config=config)
     except Exception as exc:
         raise PDFQuestionParserError(f"No se pudo hacer OCR de la imagen: {exc}") from exc
     return _normalize_multiline(text, collapse_blank_lines=config.collapse_blank_lines)
@@ -333,7 +339,7 @@ def _prepare_text_for_parsing(text: str) -> str:
     return "\n".join(out_lines)
 
 
-def _ocr_pdf_page(pdf_path: str, page_number: int, lang: str, dpi: int) -> str:
+def _ocr_pdf_page(pdf_path: str, page_number: int, lang: str, dpi: int, config: ParseConfig) -> str:
     images = convert_from_path(
         pdf_path,
         dpi=dpi,
@@ -343,7 +349,7 @@ def _ocr_pdf_page(pdf_path: str, page_number: int, lang: str, dpi: int) -> str:
     )
     if not images:
         return ""
-    return _ocr_image_with_color_markers(images[0], lang=lang)
+    return _ocr_image_with_color_markers(images[0], lang=lang, config=config)
 
 
 def _extract_text_with_color_marks_from_pdf_page(page: Any) -> str:
@@ -462,10 +468,11 @@ def _is_word_in_color_boxes(
     return False
 
 
-def _ocr_image_with_color_markers(image: Image.Image, lang: str) -> str:
+def _ocr_image_with_color_markers(image: Image.Image, lang: str, config: ParseConfig) -> str:
     """OCR por palabra y marca solo tokens en rojo (si aplica)."""
     data = pytesseract.image_to_data(image, lang=lang, output_type=pytesseract.Output.DICT)
     line_words: Dict[Tuple[int, int, int], List[Tuple[int, str]]] = {}
+    line_bounds: Dict[Tuple[int, int, int], List[int]] = {}
     line_order: List[Tuple[int, int, int]] = []
 
     n = len(data.get("text", []))
@@ -490,13 +497,113 @@ def _ocr_image_with_color_markers(image: Image.Image, lang: str) -> str:
         if key not in line_words:
             line_words[key] = []
             line_order.append(key)
+            line_bounds[key] = [left, top, left + width, top + height]
+        else:
+            b = line_bounds[key]
+            b[0] = min(b[0], left)
+            b[1] = min(b[1], top)
+            b[2] = max(b[2], left + width)
+            b[3] = max(b[3], top + height)
         line_words[key].append((left, text))
 
     output_lines: List[str] = []
     for k in line_order:
         words = sorted(line_words[k], key=lambda item: item[0])
-        output_lines.append(" ".join(w for _, w in words))
+        line_text = " ".join(w for _, w in words).strip()
+        if config.use_math_latex and _looks_like_math_line(_remove_color_markers(line_text)):
+            bounds = line_bounds.get(k)
+            if bounds:
+                latex = _extract_latex_from_line_crop(image, bounds)
+                if latex:
+                    plain_line = _remove_color_markers(line_text)
+                    if latex not in plain_line:
+                        line_text = f"{line_text} $$ {latex} $$"
+        output_lines.append(line_text)
     return "\n".join(output_lines).strip()
+
+
+def _looks_like_math_line(text: str) -> bool:
+    txt = (text or "").strip()
+    if len(txt) < 3:
+        return False
+    if MATH_SYMBOL_RE.search(txt):
+        return True
+    return bool(MATH_DENSE_RE.search(txt))
+
+
+def _extract_latex_from_line_crop(image: Image.Image, bounds: Sequence[int]) -> str:
+    if len(bounds) != 4:
+        return ""
+    img_w, img_h = image.size
+    x0, y0, x1, y1 = [int(v) for v in bounds]
+    if x1 <= x0 or y1 <= y0:
+        return ""
+
+    # Expandimos un poco para capturar operadores pegados al borde.
+    padding = 3
+    x0 = max(0, x0 - padding)
+    y0 = max(0, y0 - padding)
+    x1 = min(img_w, x1 + padding)
+    y1 = min(img_h, y1 + padding)
+    if x1 <= x0 or y1 <= y0:
+        return ""
+
+    try:
+        crop = image.crop((x0, y0, x1, y1))
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
+            temp_path = tmp.name
+        crop.save(temp_path, format="PNG")
+        try:
+            p2t = _get_pix2text_instance()
+            result = p2t.recognize_formula(temp_path)
+            latex = _normalize_pix2text_output(result)
+            return _sanitize_latex(latex)
+        finally:
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
+    except Exception:
+        return ""
+
+
+def _get_pix2text_instance():
+    global _PIX2TEXT_INSTANCE
+    if _PIX2TEXT_INSTANCE is None:
+        from pix2text import Pix2Text  # type: ignore
+        _PIX2TEXT_INSTANCE = Pix2Text()
+    return _PIX2TEXT_INSTANCE
+
+
+def _normalize_pix2text_output(result: Any) -> str:
+    if result is None:
+        return ""
+    if isinstance(result, str):
+        return result.strip()
+    if isinstance(result, dict):
+        return str(result.get("text") or result.get("latex") or "").strip()
+    if isinstance(result, list):
+        parts: List[str] = []
+        for item in result:
+            if isinstance(item, str):
+                parts.append(item.strip())
+            elif isinstance(item, dict):
+                parts.append(str(item.get("text") or item.get("latex") or "").strip())
+            else:
+                parts.append(str(item).strip())
+        return " ".join(p for p in parts if p).strip()
+    return str(result).strip()
+
+
+def _sanitize_latex(text: str) -> str:
+    if not text:
+        return ""
+    latex = re.sub(r"\s+", " ", text).strip()
+    if not latex:
+        return ""
+    if latex.startswith("$$") and latex.endswith("$$"):
+        latex = latex[2:-2].strip()
+    return latex
 
 
 def _is_bbox_reddish(image: Image.Image, left: int, top: int, width: int, height: int) -> bool:
