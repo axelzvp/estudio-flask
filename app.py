@@ -2,7 +2,8 @@ from functools import wraps
 import re
 from flask import Flask, redirect, request, jsonify, send_from_directory, render_template, session
 from flask_cors import CORS
-from pymongo import MongoClient
+from pymongo import ASCENDING, DESCENDING, IndexModel, MongoClient
+from pymongo.errors import DuplicateKeyError
 from bson import ObjectId
 from datetime import datetime, UTC
 from werkzeug.utils import secure_filename
@@ -68,6 +69,81 @@ users_collection = db['usuarios']
 simulators_collection = db['simuladores']
 simulator_scores_collection = db['simulator_scores']
 simulator_attempts_collection = db['simulator_attempts']
+
+
+def _safe_create_indexes(collection, indexes, label):
+    """Create indexes without breaking boot if one index fails."""
+    if not indexes:
+        return
+    try:
+        names = collection.create_indexes(indexes)
+        print(f"[mongo] {label}: {len(names)} indexes ready")
+    except Exception as exc:
+        print(f"[mongo] warning creating indexes for {label}: {exc}")
+
+
+def _drop_legacy_scores_index():
+    """Drop old score index that used a non-existent field (score_percent)."""
+    try:
+        simulator_scores_collection.drop_index("ix_scores_rank")
+        print("[mongo] simulator_scores: dropped legacy ix_scores_rank")
+    except Exception:
+        # Safe to ignore if it does not exist.
+        pass
+
+
+def ensure_mongo_indexes():
+    """Ensure production indexes for users, simulators, attempts and scoreboards."""
+    _safe_create_indexes(
+        users_collection,
+        [
+            IndexModel([("email", ASCENDING)], unique=True, name="ux_users_email"),
+            IndexModel([("role", ASCENDING), ("grupo", ASCENDING)], name="ix_users_role_group"),
+        ],
+        "usuarios",
+    )
+    _safe_create_indexes(
+        questions_collection,
+        [
+            IndexModel([("subject", ASCENDING), ("topic", ASCENDING)], name="ix_questions_subject_topic"),
+            IndexModel([("subject", ASCENDING), ("university", ASCENDING)], name="ix_questions_subject_university"),
+            IndexModel([("topic", ASCENDING), ("simulator_subject", ASCENDING)], name="ix_questions_topic_simulator_subject"),
+            IndexModel([("created_at", DESCENDING)], name="ix_questions_created_at_desc"),
+        ],
+        "matematicas",
+    )
+    _safe_create_indexes(
+        simulators_collection,
+        [
+            IndexModel([("name", ASCENDING)], unique=True, name="ux_simulators_name"),
+            IndexModel([("enabled_from", ASCENDING), ("enabled_until", ASCENDING)], name="ix_simulators_window"),
+            IndexModel([("force_enabled", ASCENDING)], name="ix_simulators_force_enabled"),
+        ],
+        "simuladores",
+    )
+    _safe_create_indexes(
+        simulator_attempts_collection,
+        [
+            IndexModel([("simulator", ASCENDING), ("user_id", ASCENDING)], unique=True, name="ux_attempts_simulator_user"),
+            IndexModel([("simulator", ASCENDING), ("finished_at", DESCENDING)], name="ix_attempts_simulator_finished"),
+            IndexModel([("user_id", ASCENDING), ("finished_at", DESCENDING)], name="ix_attempts_user_finished"),
+        ],
+        "simulator_attempts",
+    )
+    _safe_create_indexes(
+        simulator_scores_collection,
+        [
+            IndexModel([("simulator", ASCENDING), ("user_id", ASCENDING)], unique=True, name="ux_scores_simulator_user"),
+            IndexModel([("simulator", ASCENDING), ("correct", DESCENDING), ("total", DESCENDING), ("created_at", ASCENDING)], name="ix_scores_rank"),
+            IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_scores_user_created"),
+        ],
+        "simulator_scores",
+    )
+
+
+# Safe to call in every worker boot; Mongo create_indexes is idempotent.
+_drop_legacy_scores_index()
+ensure_mongo_indexes()
 
 # ========== FUNCIONES HELPER ==========
 # Crear carpeta si no existe
@@ -1123,12 +1199,23 @@ def get_simulators():
         if 'user_id' in session:
             user_scores_cursor = simulator_scores_collection.find(
                 {'user_id': session['user_id']},
-                {'simulator': 1, 'correct': 1, 'total': 1}
+                {
+                    'simulator': 1,
+                    'correct': 1,
+                    'total': 1,
+                    'latest_correct': 1,
+                    'latest_total': 1
+                }
             )
             for doc in user_scores_cursor:
+                latest_correct = doc.get('latest_correct')
+                latest_total = doc.get('latest_total')
+                first_correct = doc.get('correct', 0)
+                first_total = doc.get('total', 0)
                 user_scores[doc.get('simulator')] = {
-                    'correct': doc.get('correct', 0),
-                    'total': doc.get('total', 0)
+                    # En tarjetas/vista previa mostramos el resultado mas reciente.
+                    'correct': latest_correct if latest_correct is not None else first_correct,
+                    'total': latest_total if latest_total is not None else first_total
                 }
 
         topic_names = questions_collection.distinct('topic', {'subject': SIMULATOR_SUBJECT})
@@ -1313,7 +1400,7 @@ def toggle_simulator_force_enable(simulator_name):
 @app.route('/api/simulators/<simulator_name>/score', methods=['POST'])
 @login_required
 def save_simulator_score(simulator_name):
-    """Guarda el ultimo puntaje del usuario y su desglose por materia"""
+    """Guarda solo el primer intento del alumno por simulador."""
     try:
         data = request.get_json() or {}
         correct = int(data.get('correct', 0))
@@ -1346,30 +1433,73 @@ def save_simulator_score(simulator_name):
                 user_group = ''
 
         now_utc = datetime.now(UTC)
+        first_filter = {'user_id': user_id, 'simulator': simulator_name}
+
+        # Escritura atomica:
+        # - correct/total = primer intento (fijo para listas/ranking).
+        # - latest_* = ultimo intento (cambia en cada repeticion para vista previa).
+        try:
+            attempt_write = simulator_attempts_collection.update_one(
+                first_filter,
+                {'$setOnInsert': {
+                    'user_id': user_id,
+                    'student_name': user_name or 'Alumno',
+                    'student_group': user_group,
+                    'simulator': simulator_name,
+                    'correct': correct,
+                    'total': total,
+                    'section_stats': section_stats,
+                    'finished_at': now_utc,
+                    'created_at': now_utc
+                }},
+                upsert=True
+            )
+        except DuplicateKeyError:
+            # Otro request simultaneo gano el insert del primer intento.
+            attempt_write = None
+
         simulator_scores_collection.update_one(
-            {'user_id': user_id, 'simulator': simulator_name},
-            {'$set': {
-                'correct': correct,
-                'total': total,
-                'updated_at': now_utc
-            }},
+            first_filter,
+            {
+                '$setOnInsert': {
+                    'user_id': user_id,
+                    'simulator': simulator_name,
+                    # Primer intento fijo (ranking/listas).
+                    'correct': correct,
+                    'total': total,
+                    'created_at': now_utc,
+                },
+                '$set': {
+                    # Ultimo intento dinamico (vista previa del simulador).
+                    'latest_correct': correct,
+                    'latest_total': total,
+                    'latest_section_stats': section_stats,
+                    'latest_attempt_at': now_utc,
+                    'updated_at': now_utc,
+                }
+            },
             upsert=True
         )
 
-        # Guardar cada intento (historial persistente)
-        simulator_attempts_collection.insert_one({
-            'user_id': user_id,
-            'student_name': user_name or 'Alumno',
-            'student_group': user_group,
-            'simulator': simulator_name,
-            'correct': correct,
-            'total': total,
-            'section_stats': section_stats,
-            'finished_at': now_utc,
-            'created_at': now_utc
-        })
+        if attempt_write and attempt_write.upserted_id is not None:
+            return jsonify({
+                'success': True,
+                'persisted': True,
+                'first_attempt': {'correct': correct, 'total': total},
+                'current_attempt': {'correct': correct, 'total': total}
+            })
 
-        return jsonify({'success': True})
+        first_attempt = simulator_attempts_collection.find_one(first_filter, {'correct': 1, 'total': 1})
+        return jsonify({
+            'success': True,
+            'persisted': False,
+            'message': 'El primer intento ya estaba guardado',
+            'first_attempt': {
+                'correct': int((first_attempt or {}).get('correct', 0) or 0),
+                'total': int((first_attempt or {}).get('total', 0) or 0),
+            },
+            'current_attempt': {'correct': correct, 'total': total}
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
