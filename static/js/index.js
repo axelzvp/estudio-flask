@@ -1055,7 +1055,7 @@ function displayStudyQuestion(question) {
 
     if (question.image && question.image.trim() !== '') {
 
-           const imageUrl = `/static/img/${question.image}`;
+           const imageUrl = resolveQuestionImageUrl(question.image);
 
            questionHTML += `
 
@@ -1650,6 +1650,15 @@ function cleanQuestionText(text) {
     return cleanedLines.join('\n');
 }
 
+function resolveQuestionImageUrl(imageValue) {
+    const value = String(imageValue || '').trim();
+    if (!value) return '';
+    if (/^https?:\/\//i.test(value) || value.startsWith('/')) {
+        return value;
+    }
+    return `/static/img/${value}`;
+}
+
 function showExamQuestion(index) {
 
     if (index < 0 || index >= examState.questions.length) return;
@@ -1703,7 +1712,7 @@ function showExamQuestion(index) {
 
     if (question.image && question.image.trim() !== '') {
 
-        const imageUrl = `/static/img/${question.image}`;
+        const imageUrl = resolveQuestionImageUrl(question.image);
 
         questionHTML += `
 

@@ -30,6 +30,16 @@
         };
 let existingImageUrl = null;
         const DEFAULT_MODAL_SUBJECTS = ['Simulador'];
+
+
+function resolveQuestionImageUrl(imageValue) {
+    const value = String(imageValue || '').trim();
+    if (!value) return '';
+    if (/^https?:\/\//i.test(value) || value.startsWith('/')) {
+        return value;
+    }
+    return `/static/img/${value}`;
+}
         
         // Verificar autenticación y rol
         document.addEventListener('DOMContentLoaded', async function() {
@@ -1217,7 +1227,7 @@ function createQuestionCard(question) {
     // Crear HTML para imagen si existe - FORMATO UNIFICADO
     let imageHTML = '';
     if (question.image && question.image.trim() !== '') {
-        const imageUrl = `/static/img/${question.image}`;
+        const imageUrl = resolveQuestionImageUrl(question.image);
         imageHTML = `
             <div class="question-image-preview" style="margin: 10px 0; text-align: center;">
                 <img src="${imageUrl}" 
@@ -2505,7 +2515,7 @@ function displayStudyQuestion(question) {
     
     // Añadir imagen si existe (USANDO EL MISMO FORMATO QUE index.js)
     if (question.image && question.image.trim() !== '') {
-        const imageUrl = `/static/img/${question.image}`;
+        const imageUrl = resolveQuestionImageUrl(question.image);
         questionHTML += `
             <div class="question-image-container" style="margin: 15px 0; text-align: center;">
                 <img src="${imageUrl}" 
@@ -3554,7 +3564,7 @@ function editQuestion(questionId) {
     if (question.image) {
         existingImageUrl = question.image;
         document.getElementById('imagePreviewContainer').style.display = 'block';
-        document.getElementById('previewImage').src = `/static/img/${question.image}`;
+        document.getElementById('previewImage').src = resolveQuestionImageUrl(question.image);
     } else {
         existingImageUrl = null;
         document.getElementById('imagePreviewContainer').style.display = 'none';

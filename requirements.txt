@@ -9,6 +9,7 @@ dnspython==2.8.0
 Flask==2.3.3
 Flask-Cors==4.0.0
 Flask-JWT-Extended==4.5.3
+boto3==1.35.99
 gunicorn==22.0.0
 itsdangerous==2.2.0
 Jinja2==3.1.6

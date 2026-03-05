@@ -1,5 +1,6 @@
 from functools import wraps
 import re
+import mimetypes
 from flask import Flask, redirect, request, jsonify, send_from_directory, render_template, session
 from flask_cors import CORS
 from pymongo import ASCENDING, DESCENDING, IndexModel, MongoClient
@@ -12,6 +13,8 @@ import hashlib
 import os
 import tempfile
 from dotenv import load_dotenv
+import boto3
+from botocore.client import Config
 from pdf_question_parser import parse_questions_from_file, PDFQuestionParserError, ParseConfig
 
 load_dotenv()
@@ -50,6 +53,7 @@ SIMULATOR_SECTION_ALIASES = {
     "arte": "Arte"
 }
 _pix2text_instance = None
+_r2_client = None
 
 # ========== CONFIGURACIÓN DE LA APLICACIÓN ==========
 app = Flask(__name__)
@@ -60,6 +64,12 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 CORS(app)
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
+app.config['R2_ENDPOINT_URL'] = os.getenv("R2_ENDPOINT_URL", "").strip()
+app.config['R2_ACCESS_KEY_ID'] = os.getenv("R2_ACCESS_KEY_ID", "").strip()
+app.config['R2_SECRET_ACCESS_KEY'] = os.getenv("R2_SECRET_ACCESS_KEY", "").strip()
+app.config['R2_BUCKET_NAME'] = os.getenv("R2_BUCKET_NAME", "").strip()
+app.config['R2_REGION'] = os.getenv("R2_REGION", "auto").strip()
+app.config['R2_PUBLIC_BASE_URL'] = os.getenv("R2_PUBLIC_BASE_URL", "").strip().rstrip("/")
 
 # ========== CONEXIÓN A MONGODB ==========
 client = MongoClient(MONGO_URI)
@@ -156,6 +166,91 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def is_external_image_ref(value):
+    txt = str(value or '').strip().lower()
+    return txt.startswith('http://') or txt.startswith('https://')
+
+
+def is_r2_configured():
+    return bool(
+        app.config.get('R2_ENDPOINT_URL')
+        and app.config.get('R2_ACCESS_KEY_ID')
+        and app.config.get('R2_SECRET_ACCESS_KEY')
+        and app.config.get('R2_BUCKET_NAME')
+    )
+
+
+def get_r2_client():
+    global _r2_client
+    if _r2_client is None:
+        _r2_client = boto3.client(
+            's3',
+            endpoint_url=app.config['R2_ENDPOINT_URL'],
+            aws_access_key_id=app.config['R2_ACCESS_KEY_ID'],
+            aws_secret_access_key=app.config['R2_SECRET_ACCESS_KEY'],
+            region_name=app.config['R2_REGION'],
+            config=Config(signature_version='s3v4'),
+        )
+    return _r2_client
+
+
+def upload_image_to_storage(image_file, original_filename):
+    safe_name = secure_filename(original_filename or 'image.png')
+    stamp = datetime.now(UTC).strftime('%Y%m%d_%H%M%S_%f')
+    key = f"questions/{stamp}_{safe_name}"
+
+    if not is_r2_configured():
+        raise RuntimeError('R2 no configurado: faltan variables de entorno de almacenamiento.')
+
+    content_type = mimetypes.guess_type(safe_name)[0] or 'application/octet-stream'
+    client = get_r2_client()
+    image_file.stream.seek(0)
+    client.upload_fileobj(
+        image_file.stream,
+        app.config['R2_BUCKET_NAME'],
+        key,
+        ExtraArgs={'ContentType': content_type}
+    )
+
+    public_base = app.config.get('R2_PUBLIC_BASE_URL', '')
+    if public_base:
+        return f"{public_base}/{key}"
+    return key
+
+
+def delete_image_from_storage(image_ref):
+    value = str(image_ref or '').strip()
+    if not value:
+        return
+
+    if is_external_image_ref(value):
+        # Si es URL pública de R2, extraemos key y borramos remoto.
+        public_base = app.config.get('R2_PUBLIC_BASE_URL', '').rstrip('/')
+        if public_base and value.startswith(f"{public_base}/") and is_r2_configured():
+            key = value[len(public_base) + 1:]
+            try:
+                get_r2_client().delete_object(Bucket=app.config['R2_BUCKET_NAME'], Key=key)
+            except Exception:
+                pass
+        return
+
+    # Si viene key de R2 sin dominio, intentamos borrar remoto.
+    if value.startswith('questions/') and is_r2_configured():
+        try:
+            get_r2_client().delete_object(Bucket=app.config['R2_BUCKET_NAME'], Key=value)
+        except Exception:
+            pass
+        return
+
+    # Archivo local
+    local_path = os.path.join(app.config['UPLOAD_FOLDER'], value)
+    if os.path.exists(local_path):
+        try:
+            os.remove(local_path)
+        except OSError:
+            pass
+
+
 def hash_password(password):
     """Encripta una contraseña usando SHA-256"""
     return hashlib.sha256(password.encode()).hexdigest()
@@ -172,10 +267,11 @@ def jsonify_question(question):
         question['_id'] = str(question['_id'])
     if question and question.get('image'):
         image_name = str(question.get('image')).strip()
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_name)
-        # Evita 404 en frontend cuando el registro apunta a una imagen inexistente.
-        if not os.path.exists(image_path):
-            question['image'] = ''
+        if image_name and not is_external_image_ref(image_name):
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_name)
+            # Evita 404 en frontend cuando el registro apunta a una imagen inexistente.
+            if not os.path.exists(image_path):
+                question['image'] = ''
     return question
 
 def ensure_simulator(name):
@@ -618,12 +714,12 @@ def create_question():
 
         if image_file and image_file.filename != '':
             if allowed_file(image_file.filename):
-                filename = secure_filename(image_file.filename)
-                # Agregar timestamp para evitar colisiones
-                filename = f"{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}_{filename}"
-                image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                image_file.save(image_path)
-                image_filename = filename
+                if not is_r2_configured():
+                    return jsonify({
+                        'success': False,
+                        'error': 'Almacenamiento R2 no configurado. No se permite guardado local en producción.'
+                    }), 503
+                image_filename = upload_image_to_storage(image_file, image_file.filename)
             else:
                 return jsonify({
                     'success': False,
@@ -1083,9 +1179,12 @@ def update_question(question_id):
 def delete_question(question_id):
     """Elimina una pregunta"""
     try:
+        question = questions_collection.find_one({'_id': ObjectId(question_id)}, {'image': 1})
         result = questions_collection.delete_one({'_id': ObjectId(question_id)})
         
         if result.deleted_count == 1:
+            if question and question.get('image'):
+                delete_image_from_storage(question.get('image'))
             return jsonify({
                 'success': True,
                 'message': 'Pregunta eliminada'
