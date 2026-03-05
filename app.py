@@ -1508,6 +1508,15 @@ def save_simulator_score(simulator_name):
 def get_simulator_results(simulator_name):
     """Obtiene resultados agregados por alumno para un simulador"""
     try:
+        page = max(1, int(request.args.get('page', 1)))
+        page_size_raw = request.args.get('page_size')
+        page_size: int | None = None
+        if page_size_raw is not None and str(page_size_raw).strip() != '':
+            page_size = int(page_size_raw)
+            if page_size < 0:
+                page_size = 0
+            page_size = min(page_size, 100)
+
         current_user_id = str(session.get('user_id') or '')
         current_user_role = str(session.get('user_role') or '').strip().lower()
         attempts = list(simulator_attempts_collection.find({'simulator': simulator_name}))
@@ -1516,7 +1525,15 @@ def get_simulator_results(simulator_name):
                 'success': True,
                 'simulator': simulator_name,
                 'sections': [],
-                'results': []
+                'results': [],
+                'pagination': {
+                    'page': 1,
+                    'page_size': page_size or 0,
+                    'total_items': 0,
+                    'total_pages': 1,
+                    'has_prev': False,
+                    'has_next': False
+                }
             })
 
         # Tomar solo el primer intento por alumno para el ranking
@@ -1560,6 +1577,20 @@ def get_simulator_results(simulator_name):
         sections = sorted(all_sections, key=lambda s: (order_map.get(s, len(SIMULATOR_SECTION_ORDER)), s.lower()))
         first_attempts.sort(key=lambda a: (-(int(a.get('correct', 0) or 0)), -(int(a.get('total', 0) or 0)), a.get('finished_at') or datetime.max.replace(tzinfo=UTC)))
 
+        # Evita N+1 queries para grupo cuando falte student_group.
+        missing_group_ids = {
+            str(a.get('user_id'))
+            for a in first_attempts
+            if not (a.get('student_group') or '').strip()
+            and a.get('user_id')
+            and ObjectId.is_valid(str(a.get('user_id')))
+        }
+        group_by_user_id = {}
+        if missing_group_ids:
+            id_objs = [ObjectId(uid) for uid in missing_group_ids]
+            for user_doc in users_collection.find({'_id': {'$in': id_objs}}, {'grupo': 1}):
+                group_by_user_id[str(user_doc.get('_id'))] = user_doc.get('grupo') or ''
+
         rows = []
         for idx, attempt in enumerate(first_attempts, start=1):
             section_scores = {}
@@ -1572,21 +1603,38 @@ def get_simulator_results(simulator_name):
             rows.append({
                 'position': idx,
                 'student_name': attempt.get('student_name') or 'Alumno',
-                'student_group': attempt.get('student_group') or (
-                    (users_collection.find_one({'_id': ObjectId(attempt.get('user_id'))}, {'grupo': 1}) or {}).get('grupo', '')
-                    if attempt.get('user_id') and ObjectId.is_valid(str(attempt.get('user_id'))) else ''
-                ),
+                'student_group': attempt.get('student_group') or group_by_user_id.get(str(attempt.get('user_id') or ''), ''),
                 'correct': int(attempt.get('correct', 0) or 0),
                 'total': int(attempt.get('total', 0) or 0),
                 'finished_at': datetime_to_iso_utc(attempt.get('finished_at')) if attempt.get('finished_at') else None,
                 'section_scores': section_scores
             })
 
+        total_items = len(rows)
+        if page_size and page_size > 0:
+            total_pages = max(1, (total_items + page_size - 1) // page_size)
+            page = min(page, total_pages)
+            start = (page - 1) * page_size
+            end = start + page_size
+            paged_rows = rows[start:end]
+        else:
+            total_pages = 1
+            page = 1
+            paged_rows = rows
+
         return jsonify({
             'success': True,
             'simulator': simulator_name,
             'sections': sections,
-            'results': rows
+            'results': paged_rows,
+            'pagination': {
+                'page': page,
+                'page_size': page_size or 0,
+                'total_items': total_items,
+                'total_pages': total_pages,
+                'has_prev': page > 1,
+                'has_next': page < total_pages
+            }
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

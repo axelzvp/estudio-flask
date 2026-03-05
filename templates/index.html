@@ -409,7 +409,10 @@
 
         <div class="results-card">
 
-            <div class="results-header">
+            <div class="results-header simulator-results-header">
+                <button class="results-close-btn" type="button" onclick="closeResults()" aria-label="Cerrar">
+                    &times;
+                </button>
 
                 <h2><i class="fas fa-trophy"></i> Resultados del Examen</h2>
 
@@ -431,8 +434,6 @@
 
                 
 
-                <h3>Revision de preguntas</h3>
-
                 <div class="results-questions" id="examReviewQuestions">
 
                     <!-- Preguntas revisadas se cargarán aquí -->
@@ -440,23 +441,9 @@
 
             </div>
 
+            <div class="results-footer" id="examReviewFooterPager"></div>
+
             
-
-            <div class="results-footer">
-
-                <button class="nav-btn" onclick="restartExam()">
-
-                    <i class="fas fa-redo"></i> Intentar otro examen
-
-                </button>
-
-                <button class="nav-btn primary" onclick="closeResults()">
-
-                    <i class="fas fa-home"></i> Volver al inicio
-
-                </button>
-
-            </div>
 
         </div>
 

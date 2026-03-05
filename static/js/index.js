@@ -25,6 +25,11 @@
         };
 
         let selectedSimulator = null;
+        let simulatorResultsState = {
+            page: 1,
+            pageSize: 25,
+            totalPages: 1
+        };
         let activeExamContext = 'general';
         let simulatorStudyState = {
             active: false,
@@ -54,6 +59,12 @@
 
             submitted: false
 
+        };
+        let examReviewPagination = {
+            page: 1,
+            pageSize: 10,
+            totalPages: 1,
+            items: []
         };
 
         
@@ -2173,12 +2184,8 @@ function showExamQuestion(index) {
 
             document.getElementById('examTimeUsed').textContent = `Tiempo utilizado: ${results.timeUsed}`;
 
-            
-
-            // Mostrar estadÃ­sticas
-
+            // Mostrar estadisticas
             const statsContainer = document.getElementById('examStats');
-
             statsContainer.innerHTML = '';
 
             const correctBox = document.getElementById('examCorrectBox');
@@ -2186,71 +2193,85 @@ function showExamQuestion(index) {
                 correctBox.textContent = `${results.correct}/${results.total}`;
             }
 
-            
-
-            // Mostrar revisiÃ³n de preguntas
-
-            const reviewContainer = document.getElementById('examReviewQuestions');
-
-            reviewContainer.innerHTML = '';
-
-            
-
-            results.review.forEach((item, index) => {
-
-                const questionDiv = document.createElement('div');
-
-                questionDiv.className = `result-question-item ${item.isCorrect ? 'correct' : 'incorrect'}`;
-
-                questionDiv.innerHTML = `
-
-                    <div class="result-question-status ${item.isCorrect ? 'correct' : 'incorrect'}">
-
-                        <i class="fas fa-${item.isCorrect ? 'check-circle' : 'times-circle'}"></i>
-
-                        Pregunta ${index + 1} - ${item.isCorrect ? 'Correcta' : 'Incorrecta'}
-
-                    </div>
-
-                    <div class="result-question-text">${item.question}</div>
-
-                    <div style="margin-top: 10px;">
-
-                        <div><strong>Tu respuesta:</strong> ${item.userAnswer}</div>
-
-                        <div><strong>Respuesta correcta:</strong> ${item.correctAnswer}</div>
-
-                        ${item.solution ? `<div style="margin-top: 10px;"><strong>Solucion:</strong> ${item.solution}</div>` : ''}
-
-                    </div>
-
-                `;
-
-                reviewContainer.appendChild(questionDiv);
-
-            });
-
-            
+            // Revision paginada de preguntas
+            examReviewPagination.items = Array.isArray(results.review) ? results.review : [];
+            examReviewPagination.page = 1;
+            examReviewPagination.totalPages = Math.max(
+                1,
+                Math.ceil(examReviewPagination.items.length / examReviewPagination.pageSize)
+            );
+            renderExamReviewPage();
 
             // Mostrar modal de resultados
-
             document.getElementById('examResultsModal').classList.add('active');
-
-            
-
-            // Renderizar MathJax
-
-            if (window.MathJax) {
-
-                MathJax.typesetPromise()
-
-                    .catch(err => console.log('MathJax error:', err));
-
-            }
 
         }
 
-        
+        function renderExamReviewPage() {
+            const reviewContainer = document.getElementById('examReviewQuestions');
+            const pagerContainer = document.getElementById('examReviewFooterPager');
+            if (!reviewContainer) return;
+
+            const totalItems = examReviewPagination.items.length;
+            const start = (examReviewPagination.page - 1) * examReviewPagination.pageSize;
+            const end = start + examReviewPagination.pageSize;
+            const pageItems = examReviewPagination.items.slice(start, end);
+
+            reviewContainer.innerHTML = '';
+            if (pagerContainer) {
+                pagerContainer.innerHTML = '';
+            }
+
+            pageItems.forEach((item, localIndex) => {
+                const index = start + localIndex;
+                const questionDiv = document.createElement('div');
+                questionDiv.className = `result-question-item ${item.isCorrect ? 'correct' : 'incorrect'}`;
+                questionDiv.innerHTML = `
+                    <div class="result-question-status ${item.isCorrect ? 'correct' : 'incorrect'}">
+                        <i class="fas fa-${item.isCorrect ? 'check-circle' : 'times-circle'}"></i>
+                        Pregunta ${index + 1} - ${item.isCorrect ? 'Correcta' : 'Incorrecta'}
+                    </div>
+                    <div class="result-question-text">${item.question}</div>
+                    <div style="margin-top: 10px;">
+                        <div><strong>Tu respuesta:</strong> ${item.userAnswer}</div>
+                        <div><strong>Respuesta correcta:</strong> ${item.correctAnswer}</div>
+                        ${item.solution ? `<div style="margin-top: 10px;"><strong>Solucion:</strong> ${item.solution}</div>` : ''}
+                    </div>
+                `;
+                reviewContainer.appendChild(questionDiv);
+            });
+
+            if (totalItems > examReviewPagination.pageSize && pagerContainer) {
+                const pager = document.createElement('div');
+                pager.className = 'sim-results-pagination';
+                pager.innerHTML = `
+                    <button type="button" class="nav-btn" id="examReviewPrevBtn" ${examReviewPagination.page <= 1 ? 'disabled' : ''}>Anterior</button>
+                    <span class="sim-results-page-info">Pagina ${examReviewPagination.page} de ${examReviewPagination.totalPages}</span>
+                    <button type="button" class="nav-btn" id="examReviewNextBtn" ${examReviewPagination.page >= examReviewPagination.totalPages ? 'disabled' : ''}>Siguiente</button>
+                `;
+                pagerContainer.appendChild(pager);
+
+                const prevBtn = document.getElementById('examReviewPrevBtn');
+                const nextBtn = document.getElementById('examReviewNextBtn');
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => changeExamReviewPage(examReviewPagination.page - 1));
+                }
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => changeExamReviewPage(examReviewPagination.page + 1));
+                }
+            }
+
+            if (window.MathJax) {
+                MathJax.typesetPromise().catch(err => console.log('MathJax error:', err));
+            }
+        }
+
+        function changeExamReviewPage(page) {
+            const safePage = Math.max(1, Math.min(examReviewPagination.totalPages, parseInt(page, 10) || 1));
+            if (safePage === examReviewPagination.page) return;
+            examReviewPagination.page = safePage;
+            renderExamReviewPage();
+        }
 
         function restartExam() {
 
@@ -2286,7 +2307,8 @@ function showExamQuestion(index) {
             }
 
             try {
-                const response = await fetch(`/api/simulators/${encodeURIComponent(selectedSimulator.name)}/results`);
+                simulatorResultsState.page = 1;
+                const response = await fetch(`/api/simulators/${encodeURIComponent(selectedSimulator.name)}/results?page=1&page_size=${simulatorResultsState.pageSize}`);
                 const data = await response.json();
                 if (!data.success) {
                     showNotification(data.error || 'No se pudieron cargar resultados', 'error');
@@ -2309,6 +2331,10 @@ function showExamQuestion(index) {
             title.textContent = data.simulator || 'Simulador';
             const rows = Array.isArray(data.results) ? data.results : [];
             const sections = Array.isArray(data.sections) ? data.sections : [];
+            const pagination = data.pagination || {};
+            simulatorResultsState.page = parseInt(pagination.page || 1, 10) || 1;
+            simulatorResultsState.totalPages = parseInt(pagination.total_pages || 1, 10) || 1;
+            const totalItems = parseInt(pagination.total_items || rows.length, 10) || 0;
             subtitle.textContent = '';
 
             if (rows.length === 0) {
@@ -2343,7 +2369,41 @@ function showExamQuestion(index) {
                         <tbody>${tbody}</tbody>
                     </table>
                 </div>
+                <div class="sim-results-pagination">
+                    <button type="button" class="nav-btn" id="simResultsPrevBtn" ${simulatorResultsState.page <= 1 ? 'disabled' : ''}>Anterior</button>
+                    <span class="sim-results-page-info">Pagina ${simulatorResultsState.page} de ${simulatorResultsState.totalPages} (${totalItems} alumno(s))</span>
+                    <button type="button" class="nav-btn" id="simResultsNextBtn" ${simulatorResultsState.page >= simulatorResultsState.totalPages ? 'disabled' : ''}>Siguiente</button>
+                </div>
             `;
+
+            const prevBtn = document.getElementById('simResultsPrevBtn');
+            const nextBtn = document.getElementById('simResultsNextBtn');
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => changeSimulatorResultsPage(simulatorResultsState.page - 1));
+            }
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => changeSimulatorResultsPage(simulatorResultsState.page + 1));
+            }
+        }
+
+        async function changeSimulatorResultsPage(page) {
+            if (!selectedSimulator) return;
+            const targetPage = Math.max(1, parseInt(page, 10) || 1);
+            if (targetPage === simulatorResultsState.page) return;
+            try {
+                const response = await fetch(
+                    `/api/simulators/${encodeURIComponent(selectedSimulator.name)}/results?page=${targetPage}&page_size=${simulatorResultsState.pageSize}`
+                );
+                const data = await response.json();
+                if (!data.success) {
+                    showNotification(data.error || 'No se pudieron cargar resultados', 'error');
+                    return;
+                }
+                renderSimulatorResults(data);
+            } catch (error) {
+                console.error('Error cambiando pagina de resultados:', error);
+                showNotification('Error de conexion', 'error');
+            }
         }
 
         function closeSimulatorResults() {
