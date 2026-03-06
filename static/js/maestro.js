@@ -2865,58 +2865,21 @@ async function saveQuestion() {
     try {
         let response;
         let endpoint;
-        
+
         if (isEditMode && currentEditQuestionId) {
-            // Para actualizar, necesitamos enviar como JSON normal
-            // Ya que PUT con FormData es más complejo
-            // Enviar sin imagen por ahora (se puede mejorar)
-            const questionData = {
-                subject: finalSubject,
-                topic: topic,
-                simulator_subject: isSimulator ? simulatorSection : '',
-                question: questionText,
-                university: finalUniversity,
-                solution: document.getElementById('modalSolution').value.trim(),
-                has_options: document.getElementById('hasOptionsCheckbox').checked,
-                // Mantener imagen existente si no se subió nueva
-                image: currentImageFile ? undefined : existingImageUrl
-            };
-            
-            if (questionData.has_options) {
-                const options = [
-                    document.getElementById('optionA').value.trim(),
-                    document.getElementById('optionB').value.trim(),
-                    document.getElementById('optionC').value.trim(),
-                    document.getElementById('optionD').value.trim()
-                ];
-                const correctOptionIndex = parseInt(document.querySelector('input[name="correctOption"]:checked').value);
-                
-                questionData.options = options;
-                questionData.correct_option = correctOptionIndex;
-                questionData.correct_answer = `${String.fromCharCode(65 + correctOptionIndex)}. ${options[correctOptionIndex]}`;
-                questionData.answer = '';
-            } else {
-                questionData.correct_answer = document.getElementById('modalAnswer').value.trim();
-                questionData.answer = document.getElementById('modalAnswer').value.trim();
-                questionData.options = [];
-                questionData.correct_option = -1;
-            }
-            
             endpoint = `/api/questions/${currentEditQuestionId}`;
             response = await fetch(endpoint, {
                 method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(questionData)
+                body: formData
             });
         } else {
-            // Crear nueva pregunta con FormData (incluye imagen)
             endpoint = '/api/questions';
             response = await fetch(endpoint, {
                 method: 'POST',
                 body: formData
             });
         }
-        
+
         const data = await response.json();
         
         if (data.success) {

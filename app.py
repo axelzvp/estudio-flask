@@ -267,7 +267,12 @@ def jsonify_question(question):
         question['_id'] = str(question['_id'])
     if question and question.get('image'):
         image_name = str(question.get('image')).strip()
-        if image_name and not is_external_image_ref(image_name):
+        public_base = app.config.get('R2_PUBLIC_BASE_URL', '').rstrip('/')
+        if image_name.startswith('questions/'):
+            # Clave de R2 guardada en DB: exponer URL si hay dominio público configurado.
+            if public_base:
+                question['image'] = f"{public_base}/{image_name}"
+        elif image_name and not is_external_image_ref(image_name):
             image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_name)
             # Evita 404 en frontend cuando el registro apunta a una imagen inexistente.
             if not os.path.exists(image_path):
@@ -777,6 +782,7 @@ def create_question():
 
         # Devolver pregunta creada
         question_doc['_id'] = str(result.inserted_id)
+        question_doc = jsonify_question(question_doc)
 
         return jsonify({
             'success': True,
@@ -1118,30 +1124,69 @@ def bulk_questions_file():
 def update_question(question_id):
     """Actualiza una pregunta existente"""
     try:
-        data = request.get_json()
-        
-        # Validación
+        is_multipart = (request.content_type or '').lower().startswith('multipart/form-data')
+        data = request.form.to_dict() if is_multipart else (request.get_json() or {})
+        existing_question = questions_collection.find_one({'_id': ObjectId(question_id)})
+        if not existing_question:
+            return jsonify({
+                'success': False,
+                'error': 'Pregunta no encontrada'
+            }), 404
+
+        # Validacion
         if not data.get('question'):
             return jsonify({
                 'success': False,
                 'error': 'La pregunta es requerida'
             }), 400
-        
-        # Crear documento de actualización
+
+        has_options = data.get('has_options', False)
+        if is_multipart:
+            has_options = str(has_options).lower() == 'true'
+
+        options = data.get('options', [])
+        if is_multipart:
+            try:
+                import json
+                options = json.loads(data.get('options', '[]'))
+            except Exception:
+                options = []
+
+        try:
+            correct_option = int(data.get('correct_option', -1))
+        except Exception:
+            correct_option = -1
+
+        image_value = existing_question.get('image', '')
+        image_file = request.files.get('image') if is_multipart else None
+        if image_file and image_file.filename:
+            if not allowed_file(image_file.filename):
+                return jsonify({
+                    'success': False,
+                    'error': 'Tipo de archivo no permitido. Use PNG, JPG, JPEG, GIF, BMP o SVG'
+                }), 400
+            new_image_ref = upload_image_to_storage(image_file, image_file.filename)
+            if image_value and image_value != new_image_ref:
+                delete_image_from_storage(image_value)
+            image_value = new_image_ref
+        elif not is_multipart and 'image' in data:
+            image_value = data.get('image') or ''
+
         update_doc = {
-            'subject': data.get('subject', 'Matemáticas'),
+            'subject': data.get('subject', 'Matematicas'),
             'topic': data.get('topic', 'General'),
             'question': data['question'],
-            'has_options': data.get('has_options', False),
-            'options': data.get('options', []),
+            'has_options': has_options,
+            'options': options,
             'correct_answer': data.get('correct_answer', ''),
-            'correct_option': data.get('correct_option', -1),
+            'correct_option': correct_option,
             'solution': data.get('solution', ''),
             'university': data.get('university', 'UNAM'),
             'simulator_subject': normalize_simulator_section(data.get('simulator_subject', '')),
+            'image': image_value,
             'updated_at': datetime.now(UTC)
         }
-        
+
         if update_doc['subject'] == SIMULATOR_SUBJECT:
             ensure_simulator(update_doc['topic'])
             if not update_doc['simulator_subject']:
@@ -1152,25 +1197,24 @@ def update_question(question_id):
         else:
             update_doc['simulator_subject'] = ''
 
-        # Actualizar en MongoDB
         result = questions_collection.update_one(
             {'_id': ObjectId(question_id)},
             {'$set': update_doc}
         )
-        
-        if result.modified_count == 1:
+
+        if result.matched_count == 1:
             updated_question = questions_collection.find_one({'_id': ObjectId(question_id)})
             return jsonify({
                 'success': True,
                 'message': 'Pregunta actualizada exitosamente',
                 'question': jsonify_question(updated_question)
             })
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Pregunta no encontrada o sin cambios'
-            }), 404
-            
+
+        return jsonify({
+            'success': False,
+            'error': 'Pregunta no encontrada'
+        }), 404
+
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
